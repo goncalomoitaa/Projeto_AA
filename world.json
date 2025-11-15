@@ -1,0 +1,9 @@
+{
+  "sizeX": 2,
+  "sizeY": 2,
+  "passos": 200,
+
+  "num_agentes": 2,
+  "nome_agentes": ["A", "B", "C"],
+  "num_obstaculos": 0
+}
