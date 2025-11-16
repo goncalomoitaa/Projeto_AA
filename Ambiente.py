@@ -8,10 +8,10 @@ class Ambiente:
     def __init__(self, sizeX, sizeY):
         self.sizeX = sizeX
         self.sizeY = sizeY
-        # self.recursos = []
         self.obstaculos = []
         self.agentes = []
         self.farol = (1, 1)
+        # self.recursos = []
 
     def observacaoPara(self, agente):
         obs = Observacao(agente)

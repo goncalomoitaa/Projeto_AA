@@ -22,8 +22,8 @@ class Agente:
         self.sensores.append(sensor)
 
     def age(self):
-        movimento = [(0,1), (0,-1), (1,0), (-1,0)]
-        return random.choice(movimento)
+        direcao = [(0,1), (0,-1), (1,0), (-1,0)]
+        return random.choice(direcao)
     # def age(self):
     #     movimento = [(0,1), (0,-1), (1,0), (-1,0)]
     #     return random.choice(movimento)

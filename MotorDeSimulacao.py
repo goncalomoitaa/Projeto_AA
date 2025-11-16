@@ -6,7 +6,6 @@ import json
 
 from Agente import Agente
 from Ambiente import Ambiente
-from SensorDistanciaVisao import SensorDistanciaVisao
 
 
 class MotorDeSimulacao:
@@ -14,7 +13,7 @@ class MotorDeSimulacao:
     def __init__(self, agentes: List[Agente], ambiente: Ambiente):
         self.agentes = agentes
         self.ambiente = ambiente
-        self.passo = 200
+        self.passos = 200
 
     def cria(self, nome_do_ficheiro_parametros: str):
         try:
@@ -23,14 +22,14 @@ class MotorDeSimulacao:
                 sizeX = parametros.get('sizeX')
                 sizeY = parametros.get('sizeY')
                 self.ambiente = Ambiente(sizeX, sizeY)
-                self.passo = parametros.get('passos')
+                self.passos = parametros.get('passos')
                 nomes_agentes = parametros.get('nome_agentes')
                 num_obstaculos = parametros.get('num_obstaculos')
                 for i in range(num_obstaculos):
                     while True:
                         x = random.randint(0, sizeX - 1)
                         y = random.randint(0, sizeY - 1)
-                        if (x,y) not in self.agentes and (x, y) != self.ambiente.farol:
+                        if (x,y) not in self.listaAgentes() and (x, y) != self.ambiente.farol:
                             self.ambiente.obstaculos.append((x,y))
                             break
                 for nome in nomes_agentes:
@@ -53,10 +52,10 @@ class MotorDeSimulacao:
         return self.agentes
 
     def executa(self):
-        for passos in range(self.passo):
-            for agente in self.agentes:
+        for passo in range(self.passos):
+            for agente in self.listaAgentes():
                 self.ambiente.observacaoPara(agente)
-                print(f"{agente.nome}-{agente.get_pos()} {agente.observacaoCurrente}")
+                print(f"Agente {agente.nome} na posicao ({agente.x}, {agente.y}) com observacao: {agente.observacaoCurrente}")#eleminar futuramente esta parte
                 dx, dy = agente.age()
                 self.ambiente.agir(dx, dy, agente)
                 if(agente.x, agente.y) == self.ambiente.farol: #eleminar futuramente esta parte
@@ -71,12 +70,12 @@ class MotorDeSimulacao:
         if self.ambiente.farol is not None:
             fx, fy = self.ambiente.farol
             world[fy][fx] = "T"
-        for agente in self.agentes:
+        for agente in self.listaAgentes():
             world[agente.y][agente.x] = agente.nome
         for obstaculo in self.ambiente.obstaculos:
             world[obstaculo[1]][obstaculo[0]] = "#"
-        for l in world:
-            print("".join(l))
+        for w in world:
+            print("".join(w))
         print()
 
 if __name__ == "__main__":
