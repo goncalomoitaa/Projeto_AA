@@ -6,6 +6,7 @@ import json
 
 from Agente import Agente
 from Ambiente import Ambiente
+from SensorDistanciaVisao import SensorDistanciaVisao
 
 
 class MotorDeSimulacao:
@@ -46,7 +47,6 @@ class MotorDeSimulacao:
         except Exception as e:
             print(f"Erro ao ler o ficheiro JSON: {e}", file=sys.stderr)
             return self
-
         return self
 
     def listaAgentes(self):
@@ -55,8 +55,8 @@ class MotorDeSimulacao:
     def executa(self):
         for passos in range(self.passo):
             for agente in self.agentes:
-                observacaoCurrente = self.ambiente.observacaoPara(agente)
-                agente.observacao(observacaoCurrente)
+                self.ambiente.observacaoPara(agente)
+                print(f"{agente.nome}-{agente.get_pos()} {agente.observacaoCurrente}")
                 dx, dy = agente.age()
                 self.ambiente.agir(dx, dy, agente)
                 if(agente.x, agente.y) == self.ambiente.farol: #eleminar futuramente esta parte

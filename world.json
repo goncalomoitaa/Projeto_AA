@@ -1,6 +1,6 @@
 {
-  "sizeX": 2,
-  "sizeY": 2,
+  "sizeX": 6,
+  "sizeY": 6,
   "passos": 200,
 
   "num_agentes": 2,
