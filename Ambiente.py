@@ -1,5 +1,6 @@
 
 from Agente import Agente
+from Observacao import Observacao
 
 
 class Ambiente:
@@ -7,13 +8,18 @@ class Ambiente:
     def __init__(self, sizeX, sizeY):
         self.sizeX = sizeX
         self.sizeY = sizeY
-        # self.recursos = []
         self.obstaculos = []
         self.agentes = []
         self.farol = (1, 1)
+        # self.recursos = []
 
     def observacaoPara(self, agente):
-        return "nada à volta"
+        obs = Observacao(agente)
+        for sensor in agente.sensores:
+            l = sensor.leituraAgente(self, agente)
+            obs.adiciona_sensor(sensor.nomeSensor, l)
+        agente.observacao(obs)
+        return obs
 
     def agir(self, dx, dy, agente: Agente):
         x = agente.x + dx

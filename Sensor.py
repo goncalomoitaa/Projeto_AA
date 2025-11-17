@@ -1,8 +1,13 @@
+from abc import ABC, abstractmethod
 
-class Sensor:
+class Sensor(ABC):
 
-    def __init__(self, id, ambiente, agente):
-        self.id = id
-        self.ambiente = ambiente
-        self.agente = agente
-        self.distancia = 1
+    def __init__(self, nomeSensor):
+        self.nomeSensor = nomeSensor
+
+    @abstractmethod
+    def leituraAgente(self, ambiente, agente):
+        pass
+
+
+
