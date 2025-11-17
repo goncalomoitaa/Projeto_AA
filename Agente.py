@@ -22,8 +22,10 @@ class Agente:
         self.sensores.append(sensor)
 
     def age(self):
-        direcao = [(0,1), (0,-1), (1,0), (-1,0)]
-        return random.choice(direcao)
+        pass
+
+
+
     # def age(self):
     #     movimento = [(0,1), (0,-1), (1,0), (-1,0)]
     #     return random.choice(movimento)
@@ -34,6 +36,11 @@ class Agente:
     def get_nome(self):
         return self.nome
 
+if __name__ == "__main__":
+    agente = Agente("A", 0, 0)
+    observacao = Observacao(agente)
+    observacao.adiciona_sensor("distancia", {(0,1): 'vazio', (0,2): 'farol'})
+    print('farol' in observacao.get_sensores()['distancia'].values())  # Deve imprimir True
 
 
 

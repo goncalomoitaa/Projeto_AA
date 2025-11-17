@@ -37,6 +37,22 @@ class Ambiente:
             agente.x = x
             agente.y = y
 
+    def leituraAmbiente(self, pos):
+        leitura = {}
+        if pos in self.obstaculos:
+            leitura[pos] = 'obstaculo'
+        if pos == self.farol:
+            leitura[pos] = 'farol'
+        for outro_agente in self.agentes:
+            if pos == (outro_agente.x, outro_agente.y):
+                leitura[pos] = outro_agente.nome
+                break
+        else:
+            if pos not in leitura:
+                leitura[pos] = 'vazio'
+        return leitura
+
+
 
 
 

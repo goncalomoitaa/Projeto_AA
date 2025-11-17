@@ -5,5 +5,5 @@
 
   "num_agentes": 2,
   "nome_agentes": ["A", "B"],
-  "num_obstaculos": 0
+  "num_obstaculos": 2
 }
