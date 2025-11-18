@@ -1,4 +1,5 @@
-
+from Accao import Accao
+from AccaoMover import AccaoMover
 from Agente import Agente
 from Observacao import Observacao
 
@@ -15,42 +16,29 @@ class Ambiente:
 
     def observacaoPara(self, agente):
         obs = Observacao(agente)
-        for sensor in agente.sensores:
+        for sensor in agente.sensoresAgente:
             l = sensor.leituraAgente(self, agente)
             obs.adiciona_sensor(sensor.nomeSensor, l)
         agente.observacao(obs)
         return obs
 
-    def agir(self, dx, dy, agente: Agente):
-        x = agente.x + dx
-        y = agente.y + dy
-        if (x, y) in self.obstaculos:
-            return
-        for outro_agente in self.agentes:
-            if outro_agente != agente and (x, y) == (outro_agente.x, outro_agente.y):
+    def agir(self, accao: Accao, agente: Agente):
+        if isinstance(accao, AccaoMover):
+            dx, dy = accao.direcao
+            x = agente.x + dx
+            y = agente.y + dy
+            if (x, y) in self.obstaculos:
                 return
-        if x < 0 or x >= self.sizeX:
-            return
-        if y < 0 or y >= self.sizeY:
-            return
-        else:
-            agente.x = x
-            agente.y = y
-
-    def leituraAmbiente(self, pos):
-        leitura = {}
-        if pos in self.obstaculos:
-            leitura[pos] = 'obstaculo'
-        if pos == self.farol:
-            leitura[pos] = 'farol'
-        for outro_agente in self.agentes:
-            if pos == (outro_agente.x, outro_agente.y):
-                leitura[pos] = outro_agente.nome
-                break
-        else:
-            if pos not in leitura:
-                leitura[pos] = 'vazio'
-        return leitura
+            for outro_agente in self.agentes:
+                if outro_agente != agente and (x, y) == (outro_agente.x, outro_agente.y):
+                    return
+            if x < 0 or x >= self.sizeX:
+                return
+            if y < 0 or y >= self.sizeY:
+                return
+            else:
+                agente.x = x
+                agente.y = y
 
 
 

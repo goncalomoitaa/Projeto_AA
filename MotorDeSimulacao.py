@@ -55,12 +55,13 @@ class MotorDeSimulacao:
         for passo in range(self.passos):
             for agente in self.listaAgentes():
                 self.ambiente.observacaoPara(agente)
-                print(f"Agente {agente.nome} na posicao ({agente.x}, {agente.y}) com observacao: {agente.observacaoCurrente}")#eleminar futuramente esta parte
-                dx, dy = agente.age()
-                self.ambiente.agir(dx, dy, agente)
+                # print(f"Agente {agente.nome} na posicao ({agente.x}, {agente.y}) com observacao: {agente.observacaoCurrente}")#eleminar futuramente esta parte
+                accao = agente.age()
+                self.ambiente.agir(accao, agente)
                 if(agente.x, agente.y) == self.ambiente.farol: #eleminar futuramente esta parte
                     print("CHEGOU AO FAROL!!!!")
                     self.ambiente.farol = None
+                    self.drawingWorld()
                     return
                 self.drawingWorld()
                 time.sleep(1)

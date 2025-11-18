@@ -1,8 +1,11 @@
 import random
 
+from AccaoMover import AccaoMover
 from Observacao import Observacao
-from Sensor import Sensor
-from SensorDistanciaVisao import SensorDistanciaVisao
+import Sensor
+from SensorAgente import SensorAgente
+from SensorFarol import SensorFarol
+from SensorObstaculo import SensorObstaculo
 
 # from abc import ABC, abstractmethod
 
@@ -12,18 +15,32 @@ class Agente:
         self.nome = nome
         self.x = x
         self.y = y
-        self.sensores = [SensorDistanciaVisao()]
+        self.sensoresAgente = [SensorObstaculo(), SensorAgente(), SensorFarol()]
         self.observacaoCurrente = None
 
     def observacao(self, obs: Observacao):
         self.observacaoCurrente = obs
 
     def instala(self, sensor: Sensor):
-        self.sensores.append(sensor)
+        self.sensoresAgente.append(sensor)
 
     def age(self):
-        pass
-
+        obs = self.observacaoCurrente.sensores.get("SensorFarol")
+        if obs and "farol" in obs:
+            pos_x, pos_y = obs["farol"]
+            dx = pos_x - self.x
+            dy = pos_y - self.y
+            i = 0 if dx == 0 else (1 if dx > 0 else -1)
+            j = 0 if dy == 0 else (1 if dy > 0 else -1)
+            print(self.observacaoCurrente.sensores.get("SensorObstaculo"))
+            if self.observacaoCurrente.sensores.get("SensorObstaculo").get((self.x + i, self.y + j)) != "obstaculo":
+                return AccaoMover((i, j))
+            else:
+                r = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
+                return AccaoMover(r)
+        else:
+            r = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
+            return AccaoMover(r)
 
 
     # def age(self):
@@ -39,8 +56,10 @@ class Agente:
 if __name__ == "__main__":
     agente = Agente("A", 0, 0)
     observacao = Observacao(agente)
-    observacao.adiciona_sensor("distancia", {(0,1): 'vazio', (0,2): 'farol'})
-    print('farol' in observacao.get_sensores()['distancia'].values())  # Deve imprimir True
+    # observacao.adiciona_sensor("distancia", {'farol': (0,2)})
+    observacao.adiciona_sensor("outro_sensor", {(1,0): "obstaculo"})
+    x = observacao.sensores.get("outro_sensor").get((1,0))
+    print(x)  # Output: farol
 
 
 
