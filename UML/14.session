@@ -1,0 +1,10 @@
+window_sizes 1920 1111 257 1657 929 128
+
+show_stereotypes
+selected classdiagram_ref 128014 // AA_projeto
+open
+  class_ref 134670 // Ambiente
+  operation_ref 135822 // instala
+  class_ref 142222 // AgenteFarol
+end
+end

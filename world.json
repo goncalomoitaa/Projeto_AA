@@ -3,7 +3,7 @@
   "sizeY": 4,
   "passos": 200,
 
-  "num_agentes": 2,
-  "nome_agentes": ["A", "B"],
+  "num_agentes": 1,
+  "nome_agentes": ["A"],
   "num_obstaculos": 0
 }
