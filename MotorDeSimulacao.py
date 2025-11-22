@@ -6,6 +6,7 @@ import json
 
 from Agente import Agente
 from Ambiente import Ambiente
+from AmbienteFarol import AmbienteFarol
 
 
 class MotorDeSimulacao:
@@ -21,7 +22,11 @@ class MotorDeSimulacao:
                 parametros = json.load(file)
                 sizeX = parametros.get('sizeX')
                 sizeY = parametros.get('sizeY')
-                self.ambiente = Ambiente(sizeX, sizeY)
+                ambiente = parametros.get('ambiente')
+                x = random.randint(0, sizeX - 1)
+                y = random.randint(0, sizeY - 1)
+                if ambiente == "Ambiente Farol":
+                    self.ambiente = AmbienteFarol(sizeX, sizeY, (x, y))
                 self.passos = parametros.get('passos')
                 nomes_agentes = parametros.get('nome_agentes')
                 num_obstaculos = parametros.get('num_obstaculos')
@@ -58,26 +63,14 @@ class MotorDeSimulacao:
                 print(f"Agente {agente.nome} na posicao ({agente.x}, {agente.y}) com observacao: {agente.observacaoCurrente}")#eleminar futuramente esta parte
                 accao = agente.age()
                 self.ambiente.agir(accao, agente)
-                if(agente.x, agente.y) == self.ambiente.farol: #eleminar futuramente esta parte
-                    print("CHEGOU AO FAROL!!!!")
-                    self.ambiente.farol = None
-                    self.drawingWorld()
-                    return
-                self.drawingWorld()
+                if isinstance(self.ambiente, AmbienteFarol):
+                    if(agente.x, agente.y) == self.ambiente.farol:
+                        print("CHEGOU AO FAROL!!!!")
+                        self.ambiente.farol = None
+                        self.ambiente.drawingWorld()
+                        return
+                self.ambiente.drawingWorld()
                 time.sleep(1)
-
-    def drawingWorld(self):
-        world = [[" . " for _ in range(self.ambiente.sizeX)] for _ in range(self.ambiente.sizeY)]
-        if self.ambiente.farol is not None:
-            fx, fy = self.ambiente.farol
-            world[fy][fx] = " T "
-        for agente in self.listaAgentes():
-            world[agente.y][agente.x] = f" {agente.nome} "
-        for obstaculo in self.ambiente.obstaculos:
-            world[obstaculo[1]][obstaculo[0]] = " # "
-        for w in world:
-            print("".join(w))
-        print()
 
 if __name__ == "__main__":
     sim = MotorDeSimulacao([], None).cria("world.json")

@@ -1,9 +1,10 @@
 {
-  "sizeX": 5,
-  "sizeY": 5,
+  "ambiente": "Ambiente Farol",
+  "sizeX": 4,
+  "sizeY": 4,
   "passos": 200,
 
   "num_agentes": 1,
   "nome_agentes": ["A"],
-  "num_obstaculos": 11
+  "num_obstaculos": 0
 }
