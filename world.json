@@ -1,9 +1,9 @@
 {
-  "sizeX": 4,
-  "sizeY": 4,
+  "sizeX": 5,
+  "sizeY": 5,
   "passos": 200,
 
   "num_agentes": 1,
   "nome_agentes": ["A"],
-  "num_obstaculos": 0
+  "num_obstaculos": 11
 }

@@ -25,9 +25,10 @@ class Agente:
         self.sensoresAgente.append(sensor)
 
     def age(self):
-        obs = self.observacaoCurrente.sensores.get("SensorFarol")
-        if obs and "farol" in obs:
-            pos_x, pos_y = obs["farol"]
+        obs = self.observacaoCurrente.sensores
+        obs_farol = obs.get("SensorFarol")
+        if obs_farol and "farol" in obs_farol:
+            pos_x, pos_y = obs_farol["farol"]
             dx = pos_x - self.x
             dy = pos_y - self.y
             i = 0 if dx == 0 else (1 if dx > 0 else -1)
@@ -35,17 +36,16 @@ class Agente:
             print(self.observacaoCurrente.sensores.get("SensorObstaculo"))
             if self.observacaoCurrente.sensores.get("SensorObstaculo").get((self.x + i, self.y + j)) != "obstaculo":
                 return AccaoMover((i, j))
-            else:
-                r = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
-                return AccaoMover(r)
-        else:
-            r = random.choice([(0,1), (0,-1), (1,0), (-1,0)])
-            return AccaoMover(r)
+        obs_obs = obs.get("SensorObstaculo")
+        if obs_obs != {}:
+            direcoes = [(-1,0), (1,0), (0,-1), (0,1)]
+            random.shuffle(direcoes)
+            for direcao in direcoes:
+                nova_pos = (self.x + direcao[0], self.y + direcao[1])
+                if obs_obs.get(nova_pos) == "vazio":
+                    return AccaoMover(direcao)
+        return AccaoMover((0,0))
 
-
-    # def age(self):
-    #     movimento = [(0,1), (0,-1), (1,0), (-1,0)]
-    #     return random.choice(movimento)
 
     def get_pos(self):
         return self.x, self.y

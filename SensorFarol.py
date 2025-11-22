@@ -4,7 +4,7 @@ from Sensor import Sensor
 class SensorFarol(Sensor):
 
     def __init__(self):
-        super().__init__("SensorFarol", 2)
+        super().__init__("SensorFarol", 1)
 
     def leituraAgente(self, ambiente, agente):
         dx = agente.x
