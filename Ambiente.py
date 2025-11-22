@@ -11,7 +11,7 @@ class Ambiente:
         self.sizeY = sizeY
         self.obstaculos = []
         self.agentes = []
-        self.farol = (1, 1)
+        self.farol = None
         # self.recursos = []
 
     def observacaoPara(self, agente):

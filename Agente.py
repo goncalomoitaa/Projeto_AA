@@ -7,8 +7,6 @@ from SensorAgente import SensorAgente
 from SensorFarol import SensorFarol
 from SensorObstaculo import SensorObstaculo
 
-# from abc import ABC, abstractmethod
-
 class Agente:
 
     def __init__(self, nome: str, x: int, y: int):
@@ -52,14 +50,6 @@ class Agente:
 
     def get_nome(self):
         return self.nome
-
-if __name__ == "__main__":
-    agente = Agente("A", 0, 0)
-    observacao = Observacao(agente)
-    # observacao.adiciona_sensor("distancia", {'farol': (0,2)})
-    observacao.adiciona_sensor("outro_sensor", {(1,0): "obstaculo"})
-    x = observacao.sensores.get("outro_sensor").get((1,0))
-    print(x)  # Output: farol
 
 
 

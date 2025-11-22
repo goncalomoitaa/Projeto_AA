@@ -29,7 +29,7 @@ class MotorDeSimulacao:
                     while True:
                         x = random.randint(0, sizeX - 1)
                         y = random.randint(0, sizeY - 1)
-                        if (x,y) not in self.listaAgentes() and (x, y) != self.ambiente.farol:
+                        if (x,y) not in self.listaAgentes() and (x, y) != self.ambiente.farol and (x,y) not in self.ambiente.obstaculos:
                             self.ambiente.obstaculos.append((x,y))
                             break
                 for nome in nomes_agentes:
