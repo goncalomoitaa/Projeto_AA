@@ -30,6 +30,10 @@ class Ambiente(ABC):
     def drawingWorld(self):
         pass
 
+    @abstractmethod
+    def getItem(self, x, y):
+        pass
+
 
 
 

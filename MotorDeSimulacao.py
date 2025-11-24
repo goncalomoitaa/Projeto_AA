@@ -5,6 +5,7 @@ from typing import List
 import json
 
 from Agente import Agente
+from AgenteFarol import AgenteFarol
 from Ambiente import Ambiente
 from AmbienteFarol import AmbienteFarol
 
@@ -27,6 +28,7 @@ class MotorDeSimulacao:
                 y = random.randint(0, sizeY - 1)
                 if ambiente == "Ambiente Farol":
                     self.ambiente = AmbienteFarol(sizeX, sizeY, (x, y))
+                    tipo_agente = AgenteFarol
                 self.passos = parametros.get('passos')
                 nomes_agentes = parametros.get('nome_agentes')
                 num_obstaculos = parametros.get('num_obstaculos')
@@ -38,7 +40,7 @@ class MotorDeSimulacao:
                             self.ambiente.obstaculos.append((x,y))
                             break
                 for nome in nomes_agentes:
-                    agente = Agente(nome, 0, 0)
+                    agente = tipo_agente(nome, 0, 0)
                     while True:
                         x = random.randint(0, sizeX - 1)
                         y = random.randint(0, sizeY - 1)

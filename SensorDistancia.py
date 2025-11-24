@@ -1,10 +1,10 @@
 from Sensor import Sensor
 
 
-class SensorAgente(Sensor):
+class SensorDistancia(Sensor):
 
     def __init__(self):
-        super().__init__("SensorAgente",1)
+        super().__init__("SensorDistancia",1)
 
     def leituraAgente(self, ambiente, agente):
         dx = agente.x
@@ -17,7 +17,5 @@ class SensorAgente(Sensor):
             posEsquerda = (dx - d, dy)
             for pos in [posCima, posBaixo, posDireita, posEsquerda]:
                 if (0 <= pos[0] < ambiente.sizeX) and (0 <= pos[1] < ambiente.sizeY):
-                    for outro_agente in ambiente.agentes:
-                        if pos == (outro_agente.x, outro_agente.y) and outro_agente != agente:
-                            obs[pos] = outro_agente.nome
+                    obs[pos] = ambiente.getItem(pos[0], pos[1])
         return obs

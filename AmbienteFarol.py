@@ -43,3 +43,14 @@ class AmbienteFarol(Ambiente):
         for w in world:
             print("".join(w))
         print()
+
+
+    def getItem(self, x, y):
+        if (x, y) in self.obstaculos:
+            return "OBSTACULO"
+        if (x, y) in self.agentes:
+            return "AGENTE"
+        if (x, y) == self.farol:
+            return "FAROL"
+        else:
+            return "VAZIO"
