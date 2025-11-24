@@ -1,10 +1,10 @@
 from Sensor import Sensor
 
 
-class SensorFarol(Sensor):
+class SensorDistancia(Sensor):
 
     def __init__(self):
-        super().__init__("SensorFarol", 2)
+        super().__init__("SensorDistancia",1)
 
     def leituraAgente(self, ambiente, agente):
         dx = agente.x
@@ -17,6 +17,5 @@ class SensorFarol(Sensor):
             posEsquerda = (dx - d, dy)
             for pos in [posCima, posBaixo, posDireita, posEsquerda]:
                 if (0 <= pos[0] < ambiente.sizeX) and (0 <= pos[1] < ambiente.sizeY):
-                    if pos == ambiente.farol:
-                            obs['farol'] = pos
+                    obs[pos] = ambiente.getItem(pos[0], pos[1])
         return obs
