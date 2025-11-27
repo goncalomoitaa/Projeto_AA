@@ -1,0 +1,11 @@
+{
+  "ambiente": "Ambiente Recolecao",
+  "sizeX": 3,
+  "sizeY": 3,
+  "passos": 200,
+  "agentes": [{"nome_agente": "A", "pos_agente": [0,0]}],
+  "obstaculos": [[1,0]],
+  "ninhos" : [[2,2]],
+  "recursos" : [{"recurso": "R", "valor": 2, "pos": [0,1]}
+                ]
+}

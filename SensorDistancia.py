@@ -18,4 +18,5 @@ class SensorDistancia(Sensor):
             for pos in [posCima, posBaixo, posDireita, posEsquerda]:
                 if (0 <= pos[0] < ambiente.sizeX) and (0 <= pos[1] < ambiente.sizeY):
                     obs[pos] = ambiente.getItem(pos[0], pos[1])
+        obs[(dx, dy)] = ambiente.getItem(dx, dy)
         return obs

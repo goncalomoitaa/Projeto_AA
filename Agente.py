@@ -1,9 +1,5 @@
 from abc import ABC, abstractmethod
-
 from Observacao import Observacao
-import Sensor
-from SensorDistancia import SensorDistancia
-
 
 class Agente(ABC):
 
@@ -11,13 +7,13 @@ class Agente(ABC):
         self.nome = nome
         self.x = x
         self.y = y
-        self.sensoresAgente = [SensorDistancia()]
+        self.sensoresAgente = []
         self.observacaoCurrente = None
 
     def observacao(self, obs: Observacao):
         self.observacaoCurrente = obs
 
-    def instala(self, sensor: Sensor):
+    def instala(self, sensor):
         self.sensoresAgente.append(sensor)
 
     def get_pos(self):

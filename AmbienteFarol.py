@@ -1,6 +1,6 @@
 from Accao import Accao
 from AccaoMover import AccaoMover
-from Agente import Agente
+from AgenteFarol import AgenteFarol
 from Ambiente import Ambiente
 
 
@@ -10,7 +10,7 @@ class AmbienteFarol(Ambiente):
         super().__init__(sizeX, sizeY)
         self.farol = farol
 
-    def agir(self, accao: Accao, agente: Agente):
+    def agir(self, accao: Accao, agente: AgenteFarol):
         if isinstance(accao, AccaoMover):
             dx, dy = accao.direcao
             if(dx, dy) == (0, 0):

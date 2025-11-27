@@ -1,4 +1,3 @@
-import random
 import sys
 import time
 from typing import List
@@ -6,8 +5,11 @@ import json
 
 from Agente import Agente
 from AgenteFarol import AgenteFarol
+from AgenteRecolecao import AgenteRecolecao
 from Ambiente import Ambiente
 from AmbienteFarol import AmbienteFarol
+from AmbienteRecolecao import AmbienteRecolecao
+from SensorDistancia import SensorDistancia
 
 
 class MotorDeSimulacao:
@@ -24,30 +26,29 @@ class MotorDeSimulacao:
                 sizeX = parametros.get('sizeX')
                 sizeY = parametros.get('sizeY')
                 ambiente = parametros.get('ambiente')
-                x = random.randint(0, sizeX - 1)
-                y = random.randint(0, sizeY - 1)
                 if ambiente == "Ambiente Farol":
-                    self.ambiente = AmbienteFarol(sizeX, sizeY, (x, y))
+                    farol = parametros.get('farol')
+                    self.ambiente = AmbienteFarol(sizeX, sizeY, (farol[0], farol[1]))
                     tipo_agente = AgenteFarol
+                if ambiente == "Ambiente Recolecao":
+                    self.ambiente = AmbienteRecolecao(sizeX, sizeY, [], [])
+                    ninhos = parametros.get('ninhos')
+                    for pos in ninhos:
+                        self.ambiente.ninhos.append((pos[0], pos[1]))
+                    recursos = parametros.get('recursos')
+                    for recurso in recursos:
+                        self.ambiente.recursos.append(recurso)
+                    tipo_agente = AgenteRecolecao
                 self.passos = parametros.get('passos')
-                nomes_agentes = parametros.get('nome_agentes')
-                num_obstaculos = parametros.get('num_obstaculos')
-                for i in range(num_obstaculos):
-                    while True:
-                        x = random.randint(0, sizeX - 1)
-                        y = random.randint(0, sizeY - 1)
-                        if (x,y) not in self.listaAgentes() and (x, y) != self.ambiente.farol and (x,y) not in self.ambiente.obstaculos:
-                            self.ambiente.obstaculos.append((x,y))
-                            break
-                for nome in nomes_agentes:
-                    agente = tipo_agente(nome, 0, 0)
-                    while True:
-                        x = random.randint(0, sizeX - 1)
-                        y = random.randint(0, sizeY - 1)
-                        if (x,y) not in self.ambiente.obstaculos and (x, y) != self.ambiente.farol:
-                            agente.x = x
-                            agente.y = y
-                            break
+                lista_agentes = parametros.get('agentes')
+                obstaculos = parametros.get('obstaculos')
+                for pos in obstaculos:
+                        self.ambiente.obstaculos.append((pos[0], pos[1]))
+                for ag in lista_agentes:
+                    nome_agente = ag['nome_agente']
+                    pos_ag = ag['pos_agente']
+                    agente = tipo_agente(nome_agente, pos_ag[0], pos_ag[1])
+                    agente.instala(SensorDistancia())
                     self.agentes.append(agente)
                     self.ambiente.agentes.append(agente)
         except Exception as e:
@@ -68,14 +69,16 @@ class MotorDeSimulacao:
                 if isinstance(self.ambiente, AmbienteFarol):
                     if(agente.x, agente.y) == self.ambiente.farol:
                         print("CHEGOU AO FAROL!!!!")
-                        self.ambiente.farol = None
+                        self.ambiente.farol = None #onde fica?
                         self.ambiente.drawingWorld()
                         return
+                if isinstance(self.ambiente, AmbienteRecolecao):
+                    print(f"points: {self.ambiente.pontos}")
                 self.ambiente.drawingWorld()
                 time.sleep(1)
 
 if __name__ == "__main__":
-    sim = MotorDeSimulacao([], None).cria("world.json")
+    sim = MotorDeSimulacao([], None).cria("mundoRecolecao.json")
     sim.executa()
 
 
