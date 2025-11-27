@@ -9,7 +9,7 @@ from AgenteRecolecao import AgenteRecolecao
 from Ambiente import Ambiente
 from AmbienteFarol import AmbienteFarol
 from AmbienteRecolecao import AmbienteRecolecao
-from SensorDistancia import SensorDistancia
+from SensorVisao import SensorVisao
 
 
 class MotorDeSimulacao:
@@ -48,7 +48,7 @@ class MotorDeSimulacao:
                     nome_agente = ag['nome_agente']
                     pos_ag = ag['pos_agente']
                     agente = tipo_agente(nome_agente, pos_ag[0], pos_ag[1])
-                    agente.instala(SensorDistancia())
+                    agente.instala(SensorVisao())
                     self.agentes.append(agente)
                     self.ambiente.agentes.append(agente)
         except Exception as e:

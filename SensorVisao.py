@@ -1,7 +1,7 @@
 from Sensor import Sensor
 
 
-class SensorDistancia(Sensor):
+class SensorVisao(Sensor):
 
     def __init__(self):
         super().__init__("SensorDistancia",1)
