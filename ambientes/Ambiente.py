@@ -1,8 +1,10 @@
-from Accao import Accao
-from Agente import Agente
-from Observacao import Observacao
+
 
 from abc import ABC, abstractmethod
+
+from agentes.Accao import Accao
+from agentes.Agente import Agente
+from agentes.Observacao import Observacao
 
 
 class Ambiente(ABC):

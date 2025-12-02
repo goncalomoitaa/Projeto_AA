@@ -1,9 +1,9 @@
 import random
 
-from AccaoDepositar import AccaoDepositar
-from AccaoMover import AccaoMover
-from AccaoRecolher import AccaoRecolher
-from Agente import Agente
+from agentes.AccaoDepositar import AccaoDepositar
+from agentes.AccaoMover import AccaoMover
+from agentes.AccaoRecolher import AccaoRecolher
+from agentes.Agente import Agente
 
 
 class AgenteRecolecao(Agente):

@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from Observacao import Observacao
+
+from agentes.Observacao import Observacao
+
 
 class Agente(ABC):
 

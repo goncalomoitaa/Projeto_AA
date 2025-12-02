@@ -1,7 +1,7 @@
-from Accao import Accao
-from AccaoMover import AccaoMover
-from AgenteFarol import AgenteFarol
-from Ambiente import Ambiente
+from agentes.Accao import Accao
+from ambientes.Ambiente import Ambiente
+from agentes.AccaoMover import AccaoMover
+from agentes.AgenteFarol import AgenteFarol
 
 
 class AmbienteFarol(Ambiente):

@@ -3,13 +3,13 @@ import time
 from typing import List
 import json
 
-from Agente import Agente
-from AgenteFarol import AgenteFarol
-from AgenteRecolecao import AgenteRecolecao
-from Ambiente import Ambiente
-from AmbienteFarol import AmbienteFarol
-from AmbienteRecolecao import AmbienteRecolecao
-from SensorVisao import SensorVisao
+from agentes.Agente import Agente
+from agentes.AgenteRecolecao import AgenteRecolecao
+from agentes.SensorVisao import SensorVisao
+from ambientes.Ambiente import Ambiente
+from ambientes.AmbienteFarol import AmbienteFarol
+from agentes.AgenteFarol import AgenteFarol
+from ambientes.AmbienteRecolecao import AmbienteRecolecao
 
 
 class MotorDeSimulacao:
@@ -78,7 +78,7 @@ class MotorDeSimulacao:
                 time.sleep(1)
 
 if __name__ == "__main__":
-    sim = MotorDeSimulacao([], None).cria("mundoRecolecao.json")
+    sim = MotorDeSimulacao([], None).cria("simulador/mundoFarol.json")
     sim.executa()
 
 

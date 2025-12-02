@@ -1,8 +1,8 @@
-from AccaoDepositar import AccaoDepositar
-from AccaoMover import AccaoMover
-from AccaoRecolher import AccaoRecolher
-from AgenteRecolecao import AgenteRecolecao
-from Ambiente import Ambiente
+from agentes.AgenteRecolecao import AgenteRecolecao
+from ambientes.Ambiente import Ambiente
+from agentes.AccaoMover import AccaoMover
+from agentes.AccaoRecolher import AccaoRecolher
+from agentes.AccaoDepositar import AccaoDepositar
 
 
 class AmbienteRecolecao(Ambiente):

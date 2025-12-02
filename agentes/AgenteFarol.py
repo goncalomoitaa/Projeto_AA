@@ -1,7 +1,7 @@
 import random
 
-from AccaoMover import AccaoMover
-from Agente import Agente
+from agentes.AccaoMover import AccaoMover
+from agentes.Agente import Agente
 
 
 class AgenteFarol(Agente):

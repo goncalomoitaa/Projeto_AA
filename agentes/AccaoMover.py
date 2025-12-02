@@ -1,4 +1,4 @@
-from Accao import Accao
+from agentes.Accao import Accao
 
 
 class AccaoMover(Accao):

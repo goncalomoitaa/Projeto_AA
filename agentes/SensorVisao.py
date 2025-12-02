@@ -1,5 +1,4 @@
-from Sensor import Sensor
-
+from agentes.Sensor import Sensor
 
 class SensorVisao(Sensor):
 
