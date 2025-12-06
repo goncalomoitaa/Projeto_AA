@@ -27,3 +27,6 @@ class AgenteFarol(Agente):
             if obs.get(nova_pos) == "VAZIO":
                 return AccaoMover(direcao)
         return AccaoMover((0,0))
+
+    def politica(self):
+        pass

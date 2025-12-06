@@ -42,12 +42,14 @@ class MotorDeSimulacao:
                 self.passos = parametros.get('passos')
                 lista_agentes = parametros.get('agentes')
                 obstaculos = parametros.get('obstaculos')
+                politica = parametros.get('politica')
                 for pos in obstaculos:
                         self.ambiente.obstaculos.append((pos[0], pos[1]))
                 for ag in lista_agentes:
                     nome_agente = ag['nome_agente']
                     pos_ag = ag['pos_agente']
                     agente = tipo_agente(nome_agente, pos_ag[0], pos_ag[1])
+                    agente.setPolitica(politica)
                     agente.instala(SensorVisao())
                     self.agentes.append(agente)
                     self.ambiente.agentes.append(agente)

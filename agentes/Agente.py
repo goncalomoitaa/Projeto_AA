@@ -11,6 +11,7 @@ class Agente(ABC):
         self.y = y
         self.sensoresAgente = []
         self.observacaoCurrente = None
+        self.politica = None
 
     def observacao(self, obs: Observacao):
         self.observacaoCurrente = obs
@@ -23,6 +24,9 @@ class Agente(ABC):
 
     def get_nome(self):
         return self.nome
+
+    def setPolitica(self, p):
+        self.politica = p
 
     @abstractmethod
     def age(self):

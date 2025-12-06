@@ -1,5 +1,6 @@
 {
   "ambiente": "Ambiente Recolecao",
+  "politica": "Politica Aleatoria",
   "sizeX": 3,
   "sizeY": 3,
   "passos": 200,

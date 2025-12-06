@@ -28,3 +28,6 @@ class AgenteRecolecao(Agente):
                 return AccaoMover(direcao)
         return AccaoMover((0, 0))
 
+    def politica(self):
+        pass
+
