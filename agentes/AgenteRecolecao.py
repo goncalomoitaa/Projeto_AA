@@ -1,33 +1,6 @@
-import random
-
-from agentes.AccaoDepositar import AccaoDepositar
-from agentes.AccaoMover import AccaoMover
-from agentes.AccaoRecolher import AccaoRecolher
 from agentes.Agente import Agente
-
-
 class AgenteRecolecao(Agente):
-
-    def __init__(self, nome, x, y):
-        super().__init__(nome, x, y)
-        self.mochila = 3
-
-    def age(self):
-        obs = self.observacaoCurrente.sensores["SensorDistancia"]
-        for pos, tipo in obs.items():
-            pos_x, pos_y = pos
-            if self.x == pos_x and self.y == pos_y and tipo == "NINHO":
-                return AccaoDepositar()
-            if self.x == pos_x and self.y == pos_y and tipo == "RECURSO":
-                return AccaoRecolher()
-        direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        random.shuffle(direcoes)
-        for direcao in direcoes:
-            nova_pos = (self.x + direcao[0], self.y + direcao[1])
-            if obs.get(nova_pos) != "OBSTACULO":
-                return AccaoMover(direcao)
-        return AccaoMover((0, 0))
-
-    def politica(self):
-        pass
-
+    def __init__(self, nome, x, y, genotipo=None):
+        super().__init__(nome, x, y, genotipo=genotipo)
+        self.mochila = 0
+        self.capacidade = 1  # ou outro valor se quiseres

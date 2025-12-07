@@ -11,10 +11,13 @@ class AmbienteRecolecao(Ambiente):
         super().__init__(sizeX, sizeY)
         self.recursos = recursos
         self.ninhos = ninhos
-        self.pontos = 0
+        self.recursos_depositados = 0
+        self.recursos_na_mochila = 0
+        self.numero_recursos = len(recursos)
 
     def agir(self, accao, agente: AgenteRecolecao):
-        print(f"pontos agente: {agente.mochila}" )
+        print(f"Recursos na mochila: {agente.mochila}" )
+        print(f"Recursos depositados: {self.recursos_depositados}" )
         if isinstance(accao, AccaoMover):
             dx, dy = accao.direcao
             if (dx, dy) == (0, 0):
@@ -34,18 +37,20 @@ class AmbienteRecolecao(Ambiente):
                 else:
                     agente.x = x
                     agente.y = y
+
         if isinstance(accao, AccaoRecolher):
             for rec in self.recursos:
                 if [agente.x, agente.y] == rec["pos"]:
-                    ponto = rec["valor"]
-                    agente.mochila += ponto
+                    agente.mochila += 1
                     self.recursos.remove(rec)
                     return
+
         if isinstance(accao, AccaoDepositar):
             if (agente.x, agente.y) in self.ninhos:
-                self.pontos += agente.mochila
+                self.recursos_depositados += agente.mochila
                 agente.mochila = 0
-                self.ninhos.remove((agente.x, agente.y))
+                # self.ninhos.remove((agente.x, agente.y))
+                #o ninho não desaparece depois de depositar
                 return
 
 
@@ -67,8 +72,6 @@ class AmbienteRecolecao(Ambiente):
     def getItem(self, x, y):
         if (x, y) in self.obstaculos:
             return "OBSTACULO"
-        if (x, y) in self.agentes:
-            return "AGENTE"
         if (x, y) in self.ninhos:
             return "NINHO"
         for rec in self.recursos:

@@ -1,17 +1,31 @@
 from abc import ABC, abstractmethod
 
 from agentes.Observacao import Observacao
+import random
 
 
 class Agente(ABC):
 
-    def __init__(self, nome: str, x: int, y: int):
+    def __init__(self, nome: str, x: int, y: int, genotipo=None):
         self.nome = nome
         self.x = x
         self.y = y
         self.sensoresAgente = []
         self.observacaoCurrente = None
         self.politica = None
+
+        # --- NOVO: genótipo ---
+        self.genotipo = genotipo or self._genotipo_aleatorio()
+
+    def _genotipo_aleatorio(self):
+        """
+        Cria um genótipo simples com alguns parâmetros.
+        """
+        return {
+            "peso_novelty": random.uniform(0.0, 1.0),
+            "peso_objetivo": random.uniform(0.0, 1.0),
+            "prob_passo_aleatorio": random.uniform(0.0, 1.0),
+        }
 
     def observacao(self, obs: Observacao):
         self.observacaoCurrente = obs
@@ -28,9 +42,9 @@ class Agente(ABC):
     def setPolitica(self, p):
         self.politica = p
 
-    @abstractmethod
     def age(self):
-        pass
-
-
-
+        if self.politica is None:
+            raise ValueError(f"Agente {self.nome} não tem política definida.")
+        if self.observacaoCurrente is None:
+            raise ValueError(f"Agente {self.nome} não tem observação definida.")
+        return self.politica.escolher_accao(self, self.observacaoCurrente)
