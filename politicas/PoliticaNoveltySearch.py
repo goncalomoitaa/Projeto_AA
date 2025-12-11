@@ -6,80 +6,71 @@ from politicas.PoliticaUniversalBase import PoliticaUniversalBase
 
 class PoliticaNoveltySearch(PoliticaUniversalBase):
 
-    def __init__(self):
-        self.visitas_por_agente = {}
+    def __init__(self, genotipo=None, num_passos = 25):
+        super().__init__()
+        self.lista_accoes = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        self.num_passos = num_passos
+        if genotipo:
+            self.genotipo = genotipo #recebe os genes do pai
+        else:
+            self.genotipo = [random.choice(self.lista_accoes) for _ in range(self.num_passos)] #na primeira geração como não tem genes o movimento tem que ser aleatório
+        self.passo_atual = 0
+        self.comportamento = set() #guarda para ver se é novidade ou comportamento repetido(guarda posições visitadas não repetidas)
+        self.caminho = [] #guarda o caminho percorrido nessa geração
+        #variáveis que criamos para ver a evolucação entre gerações
+        self.fitness_objetivo = 0.0
+        self.novelty_score = 0
+        #Todo definimos as métricas todas mesmo as que façam parte só de um ambiente?
+        self.items_recolhidos = 0
+        self.score_recursos = 0 #mudar
 
-    def _get_visitas_agente(self, agente):
-        nome = getattr(agente, "nome", str(id(agente)))
-        if nome not in self.visitas_por_agente:
-            self.visitas_por_agente[nome] = {}
-        return self.visitas_por_agente[nome]
 
-    @staticmethod
-    def _dist_manhattan(a, b):
-        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+    def reset(self): #única coisa que não da reset é o genótipo, ou seja, se o caminho for bom guarda ele e já nasce a saber
+        self.passo_atual = 0
+        self.comportamento = set()
+        self.caminho = []
+        self.items_recolhidos = 0
+        self.score_recursos = 0
 
     def escolher_accao(self, agente, observacao):
-        ctx = self._extrair_contexto(agente, observacao)
-        visao = ctx["visao"]
-        pos_actual = ctx["pos_actual"]
-
-        visitas = self._get_visitas_agente(agente)
-        visitas[pos_actual] = visitas.get(pos_actual, 0) + 1
-
-        # genótipo (se existir) – parâmetros evoluíveis
-        genotipo = getattr(agente, "genotipo", {})
-        peso_objetivo = genotipo.get("peso_objetivo", 0.0)  # 0 => “novelty puro”
-        prob_random = genotipo.get("prob_random", 0.0)      # pequena aleatoriedade opcional
-
-        # acções imediatas (recolher/depositar)
-        accao_imediata = self._accao_imediata(agente, ctx)
-        if accao_imediata is not None:
-            return accao_imediata
-
-        objetivos, obstaculos = self._objetivos_e_obstaculos(agente, ctx)
-
-        # lista de candidatos
-        direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        candidatos = []  # (di, dj, visitas_destino, dist_ao_objetivo)
-
-        for di, dj in direcoes:
-            nx, ny = agente.x + di, agente.y + dj
-            nova_pos = (nx, ny)
-
-            if nova_pos not in visao:
-                continue
-            if visao[nova_pos] == "OBSTACULO":
-                continue
-
-            num_visitas = visitas.get(nova_pos, 0)
-
-            if objetivos and peso_objetivo > 0:
-                dist_alvo = min(self._dist_manhattan(nova_pos, obj) for obj in objetivos)
+            ctx = self._extrair_contexto(agente, observacao)
+            pos_atual = ctx["pos_actual"] #regista a posição em que está
+            self.comportamento.add(pos_atual) #quanto mais tiver maior a novidade
+            self.caminho.append(pos_atual)
+            accao = None
+            accao_imediata = self._accao_imediata(agente, ctx)
+            if accao_imediata is not None: #se for recolher ou depositar entra nesse if
+                self.items_recolhidos += 1
+                accao = accao_imediata
+            elif self.passo_atual < len(self.genotipo): #caso ainda ainda tenha algo genético usa para se mover
+                direcao = self.genotipo[self.passo_atual]
+                nova_pos = (agente.x + direcao[0], agente.y + direcao[1])
+                visao = ctx["visao"]
+                if visao.get(nova_pos) != "OBSTACULO":
+                    accao = AccaoMover(direcao)
+                else:
+                    accao = AccaoMover((0,0)) #fica parado se for obstáculo
             else:
-                dist_alvo = 0
+                accao = AccaoMover((0,0))
+            self.passo_atual += 1
+            return accao
+            #Todo e se for farol?
 
-            candidatos.append((di, dj, num_visitas, dist_alvo))
+    def mutar(self, taxa_mutacao): #altera os genes com base na taxa, levando a zonas inexploradas
+        for i in range(len(self.genotipo)):
+            if random.random() < taxa_mutacao:
+                self.genotipo[i] = random.choice(self.lista_accoes)
 
-        # se não há candidatos, fica tudo como dantes
-        if not candidatos:
-            return AccaoMover((0, 0))
+    @staticmethod
+    def crossover(parent1, parent2):#combina genótipo de dois pais para criar os filhos
+        point = random.randint(1, len(parent1.genotipo) - 1)
+        filho1_geno = parent1.genotipo[:point] + parent2.genotipo[point:]
+        filho2_geno = parent2.genotipo[:point] + parent1.genotipo[point:]
+        return PoliticaNoveltySearch(filho1_geno), PoliticaNoveltySearch(filho2_geno)
 
-        import random
+    def calcular_fitness(self):
+        return self.items_recolhidos * 100
 
-        # probabilidade de movimento totalmente aleatório (exploração bruta)
-        if random.random() < prob_random:
-            di, dj, *_ = random.choice(candidatos)
-            return AccaoMover((di, dj))
 
-        # caso normal: “novelty puro” (ou com bias para objetivos se peso_objetivo > 0)
-        def score(c):
-            di, dj, v, d = c
-            # quanto MENOS visitas, melhor
-            # quanto MENOR distância ao objetivo, melhor (se o peso for > 0)
-            return (v, peso_objetivo * d)
 
-        candidatos.sort(key=score)
-        melhores = [c for c in candidatos if score(c) == score(candidatos[0])]
-        di, dj, *_ = random.choice(melhores)
-        return AccaoMover((di, dj))
+

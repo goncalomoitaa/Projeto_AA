@@ -14,19 +14,6 @@ class Agente(ABC):
         self.observacaoCurrente = None
         self.politica = None
 
-        # --- NOVO: genótipo ---
-        self.genotipo = genotipo or self._genotipo_aleatorio()
-
-    def _genotipo_aleatorio(self):
-        """
-        Cria um genótipo simples com alguns parâmetros.
-        """
-        return {
-            "peso_novelty": random.uniform(0.0, 1.0),
-            "peso_objetivo": random.uniform(0.0, 1.0),
-            "prob_passo_aleatorio": random.uniform(0.0, 1.0),
-        }
-
     def observacao(self, obs: Observacao):
         self.observacaoCurrente = obs
 

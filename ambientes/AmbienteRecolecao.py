@@ -16,8 +16,8 @@ class AmbienteRecolecao(Ambiente):
         self.numero_recursos = len(recursos)
 
     def agir(self, accao, agente: AgenteRecolecao):
-        print(f"Recursos na mochila: {agente.mochila}" )
-        print(f"Recursos depositados: {self.recursos_depositados}" )
+        # print(f"Recursos na mochila: {agente.mochila}" )
+        # print(f"Recursos depositados: {self.recursos_depositados}" )
         if isinstance(accao, AccaoMover):
             dx, dy = accao.direcao
             if (dx, dy) == (0, 0):

@@ -19,7 +19,7 @@ class MotorDeSimulacao:
     def __init__(self, agentes: List[Agente], ambiente: Ambiente):
         self.agentes = agentes
         self.ambiente = ambiente
-        self.passos = 200
+        self.passos = 25
 
     def cria(self, nome_do_ficheiro_parametros: str):
         try:
@@ -94,7 +94,7 @@ class MotorDeSimulacao:
                 # condição de paragem no Farol
                 if isinstance(self.ambiente, AmbienteFarol):
                     if (agente.x, agente.y) == self.ambiente.farol:
-                        print("CHEGOU AO FAROL!!!!")
+                        # print("CHEGOU AO FAROL!!!!")
                         self.ambiente.farol = None
                         # self.ambiente.drawingWorld()
                         return visitas  # devolve visitas
@@ -102,7 +102,7 @@ class MotorDeSimulacao:
                 # condição de paragem na Recoleção (se já lá estiveres montado)
                 if isinstance(self.ambiente, AmbienteRecolecao):
                     if self.ambiente.recursos_depositados == self.ambiente.numero_recursos:
-                        print("TODOS OS RECURSOS FORAM DEPOSITADOS!!!!")
+                        # print("TODOS OS RECURSOS FORAM DEPOSITADOS!!!!")
                         # self.ambiente.drawingWorld()
                         return visitas  # devolve visitas
 
