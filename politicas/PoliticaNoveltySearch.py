@@ -10,11 +10,11 @@ class PoliticaNoveltySearch(Politica):
         super().__init__()
         self.lista_accoes = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         self.num_passos = num_passos
+        self.acabou = False
         if genotipo: #Todo vai ter o depositar e recolher?
             self.genotipo = genotipo #recebe os genes do pai
         else:
             self.genotipo = [random.choice(self.lista_accoes) for _ in range(self.num_passos)] #na primeira geração como não tem genes o movimento tem que ser aleatório
-        self.passo_atual = 0
         self.comportamento = set() #guarda para ver se é novidade ou comportamento repetido(guarda posições visitadas não repetidas)
         self.caminho = [] #guarda o caminho percorrido nessa geração
         #variáveis que criamos para ver a evolucação entre gerações
@@ -22,9 +22,9 @@ class PoliticaNoveltySearch(Politica):
         self.objetivo = 0
         self.novelty_score = 0
         #Todo definimos as métricas todas mesmo as que façam parte só de um ambiente?
+        self.passo_atual = 0
         self.items_recolhidos = 0
         self.score_recursos = 0 #mudar
-
 
     def reset(self): #única coisa que não da reset é o genótipo, ou seja, se o caminho for bom guarda ele e já nasce a saber
         self.passo_atual = 0

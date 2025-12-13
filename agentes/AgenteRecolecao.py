@@ -17,8 +17,10 @@ class AgenteRecolecao(Agente):
         pos = (self.x, self.y)
         obj = obs.get(pos)
         if obj == "NINHO":
+            self.politica.passo_atual += 1
             return AccaoDepositar()
         if obj == "RECURSO":
+            self.politica.passo_atual += 1
             return AccaoRecolher()
         return self.politica.escolher_accao(self)
 

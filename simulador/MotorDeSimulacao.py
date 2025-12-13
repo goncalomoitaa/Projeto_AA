@@ -1,6 +1,6 @@
+import copy
 import sys
 import time
-from threading import Thread
 from typing import List
 import json
 
@@ -44,11 +44,13 @@ class MotorDeSimulacao:
         return self
 
     def reset_ambiente(self):
+        self.agentes = []
         sizeX = self.dados.get('sizeX')
         sizeY = self.dados.get('sizeY')
         ambiente = self.dados.get('ambiente')
         lista_agentes = self.dados.get('agentes')
         obstaculos = self.dados.get('obstaculos')
+        self.passos = self.dados.get('passos')
         politica = self.dados.get('politica')
         self.definePolitica(politica)
         if ambiente == "Ambiente Farol":
@@ -60,18 +62,23 @@ class MotorDeSimulacao:
             ninhos = self.dados.get('ninhos')
             for pos in ninhos:
                 self.ambiente.ninhos.append((pos[0], pos[1]))
-            recursos = self.dados.get('recursos')
-            for recurso in recursos:
+            recursos_originais = self.dados.get('recursos')
+            recursos_copia = copy.deepcopy(recursos_originais)
+
+            for recurso in recursos_copia:
                 self.ambiente.recursos.append(recurso)
+
             tipo_agente = AgenteRecolecao
-        self.passos = self.dados.get('passos')
+            # recursos = self.dados.get('recursos')
+            # for recurso in recursos:
+            #     self.ambiente.recursos.append(recurso)
+            # tipo_agente = AgenteRecolecao
         for pos in obstaculos:
             self.ambiente.obstaculos.append((pos[0], pos[1]))
         for ag in lista_agentes:
             nome_agente = ag['nome_agente']
             pos_ag = ag['pos_agente']
             agente = tipo_agente(nome_agente, pos_ag[0], pos_ag[1])
-            agente.setPolitica(politica)
             agente.instala(SensorVisao())
             self.agentes.append(agente)
             self.ambiente.agentes.append(agente)
@@ -102,6 +109,7 @@ class MotorDeSimulacao:
         media_fitness_por_gen = []
         melhor_caminho_por_gen = []
         melhor_items_global = -1
+        melhor_passos_por_gen = 0
         # melhor_caminho_global = []
         # melhor_fitness_global = -1.0
 
@@ -115,14 +123,17 @@ class MotorDeSimulacao:
                     agente = self.agentes[0]
                     agente.setPolitica(individuo)
                     for _ in range(self.passos):
+                        if individuo.acabou:
+                            break
                         self.ambiente.observacaoPara(agente)
                         accao = agente.age()
                         self.ambiente.agir(accao, agente)
                         # self.ambiente.drawingWorld()
+                        # time.sleep(1.0)
                         # self.ambiente.observacaoPara(agente)
 
                     # novelty
-                    novelty = self.politica.computar_novelty(individuo.comportamento, arquivo_novidade, k=5)
+                    novelty = self.politica.computar_novelty(individuo.comportamento, arquivo_novidade, k = 5)
                     individuo.novelty_score = novelty
                     # fitness
                     objetivo = individuo.calcular_fitness()
@@ -133,7 +144,7 @@ class MotorDeSimulacao:
             media_fitness = fitness_total / TAMANHO_POPULACAO
             media_fitness_por_gen.append(media_fitness)
             melhor_caminho_por_gen.append(melhor_da_gen.caminho)
-            print(f"Gen {gen + 1}: Média de fitness: {media_fitness:.2f} " f"(Itens: {melhor_da_gen.items_recolhidos}, Nov: {melhor_da_gen.novelty_score:.4f})")
+            print(f"Gen {gen + 1}: Média de fitness: {media_fitness:.2f} " f"(Itens: {melhor_da_gen.items_recolhidos}, Nov: {melhor_da_gen.novelty_score:.4f}) " f"Passos: {melhor_da_gen.passo_atual}")
             if melhor_da_gen.items_recolhidos > melhor_items_global:
                 melhor_items_global = melhor_da_gen.items_recolhidos
                 melhor_caminho_global = list(melhor_da_gen.caminho)
@@ -164,5 +175,5 @@ class MotorDeSimulacao:
         plt.show()
 
 if __name__ == "__main__":
-    sim = MotorDeSimulacao([], None).cria("simulador/mundoFarol.json")
+    sim = MotorDeSimulacao([], None).cria("simulador/mundoRecolecao.json")
     sim.executa()

@@ -14,7 +14,7 @@ class AmbienteFarol(Ambiente):
         if isinstance(accao, AccaoMover):
             dx, dy = accao.direcao
             if(dx, dy) == (0, 0):
-                # agente.avaliacaoEstadoAtual(-1)
+                agente.avaliacaoEstadoAtual(-5)
                 return
             else:
                 x = agente.x + dx
@@ -22,7 +22,9 @@ class AmbienteFarol(Ambiente):
                 if(x, y) == self.farol:
                     agente.x = x
                     agente.y = y
+                    # print("oi")
                     agente.avaliacaoEstadoAtual(100)
+                    agente.politica.acabou = True
                     return
                 if (x, y) in self.obstaculos:
                     agente.avaliacaoEstadoAtual(-5)

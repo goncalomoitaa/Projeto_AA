@@ -44,10 +44,12 @@ class AmbienteRecolecao(Ambiente):
                     return
         if isinstance(accao, AccaoDepositar):
             if (agente.x, agente.y) in self.ninhos:
-                agente.avaliacaoEstadoAtual(60)
+                agente.avaliacaoEstadoAtual(100)
                 self.pontos += agente.mochila
                 agente.mochila = 0
                 self.ninhos.remove((agente.x, agente.y))
+                if(len(self.ninhos) == 0):
+                    agente.politica.acabou = True
                 return
 
 
