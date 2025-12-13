@@ -10,24 +10,19 @@ class AgenteRecolecao(Agente):
 
     def __init__(self, nome, x, y):
         super().__init__(nome, x, y)
-        self.mochila = 3
+        self.mochila = 0
 
     def age(self):
         obs = self.observacaoCurrente.sensores["SensorDistancia"]
-        for pos, tipo in obs.items():
-            pos_x, pos_y = pos
-            if self.x == pos_x and self.y == pos_y and tipo == "NINHO":
-                return AccaoDepositar()
-            if self.x == pos_x and self.y == pos_y and tipo == "RECURSO":
-                return AccaoRecolher()
-        direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        random.shuffle(direcoes)
-        for direcao in direcoes:
-            nova_pos = (self.x + direcao[0], self.y + direcao[1])
-            if obs.get(nova_pos) != "OBSTACULO":
-                return AccaoMover(direcao)
-        return AccaoMover((0, 0))
+        pos = (self.x, self.y)
+        obj = obs.get(pos)
+        if obj == "NINHO":
+            return AccaoDepositar()
+        if obj == "RECURSO":
+            return AccaoRecolher()
+        return self.politica.escolher_accao(self)
 
-    def politica(self):
-        pass
+    def avaliacaoEstadoAtual(self, recompensa):
+        self.politica.objetivo += recompensa
+        self.politica.items_recolhidos += 1
 

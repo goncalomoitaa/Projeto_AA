@@ -1,12 +1,24 @@
 {
   "ambiente": "Ambiente Recolecao",
-  "politica": "Politica Aleatoria",
-  "sizeX": 3,
-  "sizeY": 3,
-  "passos": 200,
-  "agentes": [{"nome_agente": "A", "pos_agente": [0,0]}],
-  "obstaculos": [[1,0]],
-  "ninhos" : [[2,2]],
-  "recursos" : [{"recurso": "R", "valor": 2, "pos": [0,1]}
-                ]
+  "politica": "PoliticaNoveltySearch",
+  "sizeX": 5,
+  "sizeY": 5,
+  "passos": 20,
+  "agentes": [
+    { "nome_agente": "A", "pos_agente": [0, 0] }
+  ],
+  "obstaculos": [
+    [1, 0]
+  ],
+  "ninhos": [
+    [2, 2],
+    [4, 4]
+  ],
+  "recursos": [
+    { "recurso": "R1", "valor": 1, "pos": [0, 2] },
+    { "recurso": "R2", "valor": 2, "pos": [3, 0] },
+    { "recurso": "R3", "valor": 2, "pos": [1, 3] },
+    { "recurso": "R4", "valor": 3, "pos": [4, 1] },
+    { "recurso": "R5", "valor": 1, "pos": [2, 4] }
+  ]
 }

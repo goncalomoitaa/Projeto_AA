@@ -1,9 +1,9 @@
 {
   "ambiente": "Ambiente Farol",
-  "politica": "Politica Aleatoria",
+  "politica": "PoliticaNoveltySearch",
   "sizeX": 5,
   "sizeY": 5,
-  "passos": 200,
+  "passos": 9,
   "agentes": [{ "nome_agente": "A", "pos_agente": [1,2]}],
   "obstaculos": [[1,0],[1,3]],
   "farol": [4,4]

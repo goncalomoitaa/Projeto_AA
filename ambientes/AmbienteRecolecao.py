@@ -14,7 +14,7 @@ class AmbienteRecolecao(Ambiente):
         self.pontos = 0
 
     def agir(self, accao, agente: AgenteRecolecao):
-        print(f"pontos agente: {agente.mochila}" )
+        # print(f"pontos agente: {agente.mochila}" )
         if isinstance(accao, AccaoMover):
             dx, dy = accao.direcao
             if (dx, dy) == (0, 0):
@@ -37,12 +37,14 @@ class AmbienteRecolecao(Ambiente):
         if isinstance(accao, AccaoRecolher):
             for rec in self.recursos:
                 if [agente.x, agente.y] == rec["pos"]:
+                    agente.avaliacaoEstadoAtual(30)
                     ponto = rec["valor"]
                     agente.mochila += ponto
                     self.recursos.remove(rec)
                     return
         if isinstance(accao, AccaoDepositar):
             if (agente.x, agente.y) in self.ninhos:
+                agente.avaliacaoEstadoAtual(60)
                 self.pontos += agente.mochila
                 agente.mochila = 0
                 self.ninhos.remove((agente.x, agente.y))

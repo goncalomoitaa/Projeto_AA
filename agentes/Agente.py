@@ -29,6 +29,10 @@ class Agente(ABC):
         self.politica = p
 
     @abstractmethod
+    def avaliacaoEstadoAtual(self, recompensa):
+        pass
+
+    @abstractmethod
     def age(self):
         pass
 

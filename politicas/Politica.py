@@ -6,5 +6,5 @@ class Politica(ABC):
         pass
     
     @abstractmethod
-    def escolher_accao(self, policia_estado):
+    def escolher_accao(self, agente):
         pass

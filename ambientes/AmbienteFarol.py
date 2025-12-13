@@ -14,20 +14,31 @@ class AmbienteFarol(Ambiente):
         if isinstance(accao, AccaoMover):
             dx, dy = accao.direcao
             if(dx, dy) == (0, 0):
+                # agente.avaliacaoEstadoAtual(-1)
                 return
             else:
                 x = agente.x + dx
                 y = agente.y + dy
+                if(x, y) == self.farol:
+                    agente.x = x
+                    agente.y = y
+                    agente.avaliacaoEstadoAtual(100)
+                    return
                 if (x, y) in self.obstaculos:
+                    agente.avaliacaoEstadoAtual(-5)
                     return
                 for outro_agente in self.agentes:
                     if outro_agente != agente and (x, y) == (outro_agente.x, outro_agente.y):
+                        agente.avaliacaoEstadoAtual(-5)
                         return
                 if x < 0 or x >= self.sizeX:
+                    agente.avaliacaoEstadoAtual(-5)
                     return
                 if y < 0 or y >= self.sizeY:
+                    agente.avaliacaoEstadoAtual(-5)
                     return
                 else:
+                    agente.avaliacaoEstadoAtual(-1)
                     agente.x = x
                     agente.y = y
 
