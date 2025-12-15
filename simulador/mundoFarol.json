@@ -1,6 +1,6 @@
 {
   "ambiente": "Ambiente Farol",
-  "politica": "PoliticaAleatoria",
+  "politica": "PoliticaNoveltySearch",
   "sizeX": 5,
   "sizeY": 5,
   "passos": 9,

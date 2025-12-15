@@ -15,13 +15,16 @@ class PoliticaAleatoria(Politica):
         self.items_recolhidos = 0
 
     def escolher_accao(self, agente):
-        if agente.get_pos() in self.objetivos:
-            self.objetivos.remove(agente.get_pos())
+        # if agente.get_pos() in self.objetivos:
+        #     self.objetivos.remove(agente.get_pos())
         obs = agente.observacaoCurrente.sensores["SensorDistancia"]
         obj = []
         for i in self.objetivos:
             if tuple(i) in obs:
                 obj.append(tuple(i))
+        if agente.mochila > 0:
+            for j in self.ninhos:
+                obj.append(tuple(j))
         if obj:
             alvo = min(
                 obj,

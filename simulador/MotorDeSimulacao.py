@@ -33,6 +33,8 @@ class MotorDeSimulacao:
             self.politica = PoliticaNoveltySearch()
         if politica == "PoliticaAleatoria":
             self.politica = PoliticaAleatoria()
+            if isinstance(self.ambiente, AmbienteRecolecao):
+                self.politica.ninhos = self.dados.get('ninhos')
         self.politica.objetivos = self.ambiente.objetivos
         self.politica.obstaculos = self.ambiente.obstaculos
 
@@ -215,5 +217,5 @@ class MotorDeSimulacao:
         plt.show()
 
 if __name__ == "__main__":
-    sim = MotorDeSimulacao([], None).cria("simulador/mundoRecolecao.json")
+    sim = MotorDeSimulacao([], None).cria("simulador/mundoFarol.json")
     sim.executa()

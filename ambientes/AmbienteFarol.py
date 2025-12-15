@@ -23,7 +23,6 @@ class AmbienteFarol(Ambiente):
                 if(x, y) == self.farol:
                     agente.x = x
                     agente.y = y
-                    # print("oi")
                     agente.avaliacaoEstadoAtual(100)
                     agente.politica.acabou = True
                     return

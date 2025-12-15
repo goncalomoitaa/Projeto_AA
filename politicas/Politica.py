@@ -5,6 +5,7 @@ class Politica(ABC):
     def __init__(self):
         self.objetivos = None
         self.obstaculos = None
+        self.ninhos = None
     
     @abstractmethod
     def escolher_accao(self, agente):

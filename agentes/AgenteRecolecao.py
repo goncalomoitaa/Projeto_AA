@@ -16,7 +16,7 @@ class AgenteRecolecao(Agente):
         obs = self.observacaoCurrente.sensores["SensorDistancia"]
         pos = (self.x, self.y)
         obj = obs.get(pos)
-        if obj == "NINHO":
+        if obj == "NINHO" and self.mochila > 0:
             self.politica.passo_atual += 1
             return AccaoDepositar()
         if obj == "RECURSO":

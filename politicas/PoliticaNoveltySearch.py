@@ -70,9 +70,7 @@ class PoliticaNoveltySearch(Politica):
     @staticmethod
     def computar_novelty(comportamento_corrente, arquivo, k):  # calcula a novidade para os k vizinhos mais próximos
         if not arquivo:
-            return 1.0  # Todo 1.0 ou 0.0?
-        # else:
-        #     return -0.1
+            return 1.0
         distancias = [PoliticaNoveltySearch.distancia_jaccard(comportamento_corrente, b) for b in arquivo]  # compara o caminho feito pelo o agente com o da memória passada
         distancias.sort()
         if len(distancias) >= k:
