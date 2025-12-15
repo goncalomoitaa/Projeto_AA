@@ -25,6 +25,7 @@ class AmbienteFarol(Ambiente):
                     agente.y = y
                     agente.avaliacaoEstadoAtual(100)
                     agente.politica.acabou = True
+
                     return
                 if (x, y) in self.obstaculos:
                     agente.avaliacaoEstadoAtual(-5)

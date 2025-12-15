@@ -17,7 +17,7 @@ class PoliticaNoveltySearch(Politica):
             self.genotipo = [random.choice(self.lista_accoes) for _ in range(self.num_passos)] #na primeira geração como não tem genes o movimento tem que ser aleatório
         self.comportamento = set() #guarda para ver se é novidade ou comportamento repetido(guarda posições visitadas não repetidas)
         self.caminho = [] #guarda o caminho percorrido nessa geração
-        #variáveis que criamos para ver a evolucação entre gerações
+        #variáveis que criamos para ver a evolução entre gerações
         self.fitness_objetivo = 0.0
         self.objetivo = 0
         self.novelty_score = 0

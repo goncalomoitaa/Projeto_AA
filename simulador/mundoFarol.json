@@ -1,10 +1,10 @@
 {
   "ambiente": "Ambiente Farol",
   "politica": "PoliticaNoveltySearch",
-  "sizeX": 5,
-  "sizeY": 5,
-  "passos": 9,
+  "sizeX": 10,
+  "sizeY": 10,
+  "passos": 50,
   "agentes": [{ "nome_agente": "A", "pos_agente": [1, 1]}],
   "obstaculos": [[3, 3], [4, 4]],
-  "farol": [3,2]
+  "farol": [8,8]
 }

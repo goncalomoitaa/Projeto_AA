@@ -15,6 +15,8 @@ from agentes.AgenteFarol import AgenteFarol
 from ambientes.AmbienteRecolecao import AmbienteRecolecao
 from politicas.PoliticaAleatoria import PoliticaAleatoria
 from politicas.PoliticaNoveltySearch import PoliticaNoveltySearch
+from simulador.ResultadoAlgoritmo import ResultadoAlgoritmo
+
 
 class MotorDeSimulacao:
 
@@ -89,51 +91,68 @@ class MotorDeSimulacao:
         print(self.politica)
         if isinstance(self.politica, PoliticaNoveltySearch):
             print("Iniciando simulação com PoliticaNoveltySearch")
-            self.executaEvolutivo()
-            return
+            return self.executaEvolutivo()
         if isinstance(self.politica, PoliticaAleatoria):
             print("Iniciando simulação com PoliticaAleatoria")
-            self.executaAleatorio()
-            return
+            return self.executaAleatorio()
         else:
             print("Política desconhecida, não é possível executar a simulação")
             return
 
     def executaAleatorio(self):
-        NUMERO_EXERCUCOES = 3
+        NUMERO_EXECUCOES = 50
         numero_passos_por_ex = []
+        sucessos = 0
+
         print("INÍCIO DA SIMULAÇÃO")
-        for _ in range(NUMERO_EXERCUCOES):
+
+        for _ in range(NUMERO_EXECUCOES):
             self.reset_ambiente()
-            passos = 0
+
+            sucesso_execucao = False
+
             if self.agentes:
                 for ag in self.agentes:
                     ag.setPolitica(self.politica)
+
                     for _ in range(self.passos):
                         if self.politica.acabou:
+                            sucesso_execucao = True
                             break
+
                         self.ambiente.observacaoPara(ag)
                         accao = ag.age()
                         self.ambiente.agir(accao, ag)
-                        passos += 1
-                        # print(passos)
-                        # self.ambiente.drawingWorld()
-                        # time.sleep(1)
-            numero_passos_por_ex.append(self.politica.passo_atual)
-        media_passos = sum(numero_passos_por_ex) / len(numero_passos_por_ex)
-        print(f"FIM DA SIMULAÇÃO.")
 
+            if sucesso_execucao:
+                sucessos += 1
+
+            numero_passos_por_ex.append(self.politica.passo_atual)
+
+        media_passos = sum(numero_passos_por_ex) / len(numero_passos_por_ex)
+        taxa_sucesso = (sucessos / NUMERO_EXECUCOES) * 100
+
+        print("FIM DA SIMULAÇÃO.")
         print(f"Média de Passos: {media_passos:.2f}")
+        print(f"Taxa de sucesso: {taxa_sucesso:.2f}%")
+
         plt.figure(figsize=(10, 6))
         plt.plot(numero_passos_por_ex, marker='o', linestyle='-', color='blue', alpha=0.6, label='Passos por Tentativa')
         plt.axhline(y=media_passos, color='red', linestyle='--', linewidth=2, label=f'Média ({media_passos:.1f})')
         plt.title("Desempenho da Política Aleatória/Heurística")
-        plt.xlabel("Número da Execução (1-100)")
+        plt.xlabel(f"Número da Execução (1-{NUMERO_EXECUCOES})")
         plt.ylabel("Número de Passos Gastos")
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.show()
 
+
+        return ResultadoAlgoritmo(
+            nome="Aleatorio",
+            taxa_sucesso=taxa_sucesso,
+            media_passos=media_passos,
+            passos_por_execucao=numero_passos_por_ex
+        )
 
     def executaEvolutivo(self):
         TAMANHO_POPULACAO = 160
@@ -143,6 +162,7 @@ class MotorDeSimulacao:
         PESO_OBJETIVO = 1.0
         TAMANHO_TORNEIO = 5
         N_ARQUIVOS = 3
+        geracoes_com_sucesso = 0
 
         arquivo_novidade = []
         classe = type(self.politica)
@@ -157,20 +177,25 @@ class MotorDeSimulacao:
         print("INICIO EVOLUÇÃO")
         for gen in range(NUMERO_GERACOES):
             fitness_total = 0
+            sucesso_geracao = False
             for individuo in populacao:
                 individuo.reset()
                 self.reset_ambiente()
                 if len(self.agentes) > 0:
                     agente = self.agentes[0]
                     agente.setPolitica(individuo)
-                    # passos = 0
+                    passos_executados = 0
                     for _ in range(self.passos):
-                        if individuo.acabou:
-                            break
                         self.ambiente.observacaoPara(agente)
                         accao = agente.age()
                         self.ambiente.agir(accao, agente)
-                        # passos += 1
+                        passos_executados += 1
+
+                        if individuo.acabou:
+                            sucesso_geracao = True
+                            break
+
+                        individuo.passo_atual = passos_executados
                         # print(passos)
                         # self.ambiente.drawingWorld()
                         # time.sleep(1.0)
@@ -181,12 +206,15 @@ class MotorDeSimulacao:
                     objetivo = individuo.calcular_fitness()
                     individuo.fitness_objetivo = (objetivo * PESO_OBJETIVO) + (novelty * PESO_NOVIDADE)
                     fitness_total += individuo.fitness_objetivo
+            if sucesso_geracao:
+                geracoes_com_sucesso += 1
             populacao.sort(key=lambda x: x.fitness_objetivo, reverse=True)
             melhor_da_gen = populacao[0]
             media_fitness = fitness_total / TAMANHO_POPULACAO
             media_fitness_por_gen.append(media_fitness)
             melhor_caminho_por_gen.append(melhor_da_gen.caminho)
-            print(f"Gen {gen + 1}: Média de fitness: {media_fitness:.2f} " f"(Itens: {melhor_da_gen.items_recolhidos}, Nov: {melhor_da_gen.novelty_score:.4f}) " f"Passos: {melhor_da_gen.passo_atual}")
+            print(f"Gen {gen + 1}: Média de fitness: {media_fitness:.2f} " f"(Itens: {melhor_da_gen.items_recolhidos}, "
+                  f"Nov: {melhor_da_gen.novelty_score:.4f}) " f"Passos: {melhor_da_gen.passo_atual}")
             if melhor_da_gen.items_recolhidos > melhor_items_global:
                 melhor_items_global = melhor_da_gen.items_recolhidos
                 melhor_caminho_global = list(melhor_da_gen.caminho)
@@ -208,6 +236,9 @@ class MotorDeSimulacao:
             populacao = nova_populacao
         print("EVOLUÇÃO COMPLETA")
 
+        taxa_sucesso = (geracoes_com_sucesso / NUMERO_GERACOES) * 100
+        print(f"Taxa de sucesso: {taxa_sucesso:.2f}%")
+
         plt.figure(figsize=(10, 5))
         plt.plot(media_fitness_por_gen, marker='o')
         plt.title("Média de Fitness por Geração")
@@ -216,6 +247,13 @@ class MotorDeSimulacao:
         plt.grid(True)
         plt.show()
 
+        return ResultadoAlgoritmo(
+            nome="Evolutivo",
+            taxa_sucesso=taxa_sucesso,
+            fitness_medio_por_geracao=media_fitness_por_gen
+        )
+
+
 if __name__ == "__main__":
-    sim = MotorDeSimulacao([], None).cria("simulador/mundoFarol.json")
+    sim = MotorDeSimulacao([], None).cria("mundoFarol.json")
     sim.executa()

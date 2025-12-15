@@ -12,6 +12,7 @@ class Agente(ABC):
         self.sensoresAgente = []
         self.observacaoCurrente = None
         self.politica = None
+        self.chegou_objetivo = False
 
     def observacao(self, obs: Observacao):
         self.observacaoCurrente = obs
