@@ -3,7 +3,7 @@
   "politica": "PoliticaAleatoria",
   "sizeX": 5,
   "sizeY": 5,
-  "passos": 40,
+  "passos": 9,
   "agentes": [{ "nome_agente": "A", "pos_agente": [1, 1]}],
   "obstaculos": [[3, 3], [4, 4]],
   "farol": [3,2]

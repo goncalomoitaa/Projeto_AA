@@ -12,10 +12,11 @@ class AmbienteRecolecao(Ambiente):
         self.ninhos = ninhos
         self.recursos = recursos
         self.pontos = 0
-        self.objetivos = [tuple(item["pos"]) for item in recursos]
+        self.objetivos = [tuple(item["pos"]) for item in recursos] + self.ninhos
 
     def agir(self, accao, agente: AgenteRecolecao):
         # print(f"pontos agente: {agente.mochila}" )
+        print(self.objetivos)
         if isinstance(accao, AccaoMover):
             dx, dy = accao.direcao
             if (dx, dy) == (0, 0):
@@ -49,7 +50,7 @@ class AmbienteRecolecao(Ambiente):
                 self.pontos += agente.mochila
                 agente.mochila = 0
                 self.ninhos.remove((agente.x, agente.y))
-                if(len(self.ninhos) == 0):
+                if len(self.ninhos) == 0:
                     agente.politica.acabou = True
                 return
 

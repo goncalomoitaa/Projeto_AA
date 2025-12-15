@@ -11,11 +11,11 @@
     [1, 0]
   ],
   "ninhos": [
-    [2, 2],
+    [0, 2],
     [4, 4]
   ],
   "recursos": [
-    { "recurso": "R1", "valor": 1, "pos": [0, 2] },
-    { "recurso": "R2", "valor": 2, "pos": [3, 0] }
+    { "recurso": "R1", "valor": 1, "pos": [3, 0] },
+    { "recurso": "R2", "valor": 2, "pos": [2, 2] }
   ]
 }

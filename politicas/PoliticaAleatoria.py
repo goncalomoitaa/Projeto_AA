@@ -11,8 +11,12 @@ class PoliticaAleatoria(Politica):
         super().__init__()
         self.acabou = False
         self.objetivo = 0
+        self.passo_atual = 0
+        self.items_recolhidos = 0
 
     def escolher_accao(self, agente):
+        if agente.get_pos() in self.objetivos:
+            self.objetivos.remove(agente.get_pos())
         obs = agente.observacaoCurrente.sensores["SensorDistancia"]
         obj = []
         for i in self.objetivos:
@@ -38,13 +42,16 @@ class PoliticaAleatoria(Politica):
                 nova_pos = (agente.x + dx, agente.y + dy)
                 obstaculo = (obs.get(nova_pos) == "OBSTACULO")
                 if not obstaculo:
+                    self.passo_atual += 1
                     return AccaoMover((x, y))
         direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         random.shuffle(direcoes)
         for di, dj in direcoes:
             nova_pos = (agente.x + di, agente.y + dj)
             if agente.observacaoCurrente.sensores["SensorDistancia"].get(nova_pos) != "OBSTACULO":
+                self.passo_atual += 1
                 return AccaoMover((di, dj))
+        self.passo_atual += 1
         return AccaoMover((0, 0))
 
 

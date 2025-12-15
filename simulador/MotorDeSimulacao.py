@@ -1,5 +1,6 @@
 import copy
 import sys
+import time
 from typing import List
 import json
 
@@ -97,7 +98,7 @@ class MotorDeSimulacao:
             return
 
     def executaAleatorio(self):
-        NUMERO_EXERCUCOES = 50
+        NUMERO_EXERCUCOES = 3
         numero_passos_por_ex = []
         print("INÍCIO DA SIMULAÇÃO")
         for _ in range(NUMERO_EXERCUCOES):
@@ -113,7 +114,10 @@ class MotorDeSimulacao:
                         accao = ag.age()
                         self.ambiente.agir(accao, ag)
                         passos += 1
-            numero_passos_por_ex.append(passos)
+                        # print(passos)
+                        # self.ambiente.drawingWorld()
+                        # time.sleep(1)
+            numero_passos_por_ex.append(self.politica.passo_atual)
         media_passos = sum(numero_passos_por_ex) / len(numero_passos_por_ex)
         print(f"FIM DA SIMULAÇÃO.")
 
@@ -157,15 +161,17 @@ class MotorDeSimulacao:
                 if len(self.agentes) > 0:
                     agente = self.agentes[0]
                     agente.setPolitica(individuo)
+                    # passos = 0
                     for _ in range(self.passos):
                         if individuo.acabou:
                             break
                         self.ambiente.observacaoPara(agente)
                         accao = agente.age()
                         self.ambiente.agir(accao, agente)
+                        # passos += 1
+                        # print(passos)
                         # self.ambiente.drawingWorld()
                         # time.sleep(1.0)
-                        # self.ambiente.observacaoPara(agente)
                     # novelty
                     novelty = self.politica.computar_novelty(individuo.comportamento, arquivo_novidade, k = 5)
                     individuo.novelty_score = novelty
