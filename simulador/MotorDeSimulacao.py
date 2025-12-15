@@ -1,6 +1,5 @@
 import copy
 import sys
-import time
 from typing import List
 import json
 
@@ -13,6 +12,7 @@ from ambientes.Ambiente import Ambiente
 from ambientes.AmbienteFarol import AmbienteFarol
 from agentes.AgenteFarol import AgenteFarol
 from ambientes.AmbienteRecolecao import AmbienteRecolecao
+from politicas.PoliticaAleatoria import PoliticaAleatoria
 from politicas.PoliticaNoveltySearch import PoliticaNoveltySearch
 
 class MotorDeSimulacao:
@@ -29,9 +29,11 @@ class MotorDeSimulacao:
 
     def definePolitica(self, politica):
         if politica == "PoliticaNoveltySearch":
-            self.politica = PoliticaNoveltySearch
+            self.politica = PoliticaNoveltySearch()
         if politica == "PoliticaAleatoria":
-            pass
+            self.politica = PoliticaAleatoria()
+        self.politica.objetivos = self.ambiente.objetivos
+        self.politica.obstaculos = self.ambiente.obstaculos
 
     def cria(self, nome_do_ficheiro_parametros: str):
         try:
@@ -52,29 +54,22 @@ class MotorDeSimulacao:
         obstaculos = self.dados.get('obstaculos')
         self.passos = self.dados.get('passos')
         politica = self.dados.get('politica')
-        self.definePolitica(politica)
         if ambiente == "Ambiente Farol":
             farol = self.dados.get('farol')
             self.ambiente = AmbienteFarol(sizeX, sizeY, (farol[0], farol[1]))
             tipo_agente = AgenteFarol
-        if ambiente == "Ambiente Recolecao":
-            self.ambiente = AmbienteRecolecao(sizeX, sizeY, [], [])
+        elif ambiente == "Ambiente Recolecao":
+            ninhos_lista = []
             ninhos = self.dados.get('ninhos')
             for pos in ninhos:
-                self.ambiente.ninhos.append((pos[0], pos[1]))
+                ninhos_lista.append((pos[0], pos[1]))
             recursos_originais = self.dados.get('recursos')
             recursos_copia = copy.deepcopy(recursos_originais)
-
-            for recurso in recursos_copia:
-                self.ambiente.recursos.append(recurso)
-
+            self.ambiente = AmbienteRecolecao(sizeX, sizeY, recursos_copia, ninhos_lista)
             tipo_agente = AgenteRecolecao
-            # recursos = self.dados.get('recursos')
-            # for recurso in recursos:
-            #     self.ambiente.recursos.append(recurso)
-            # tipo_agente = AgenteRecolecao
-        for pos in obstaculos:
-            self.ambiente.obstaculos.append((pos[0], pos[1]))
+        if obstaculos:
+            for pos in obstaculos:
+                self.ambiente.obstaculos.append((pos[0], pos[1]))
         for ag in lista_agentes:
             nome_agente = ag['nome_agente']
             pos_ag = ag['pos_agente']
@@ -82,17 +77,57 @@ class MotorDeSimulacao:
             agente.instala(SensorVisao())
             self.agentes.append(agente)
             self.ambiente.agentes.append(agente)
+        politica = self.dados.get('politica')
+        self.definePolitica(politica)
+
 
 
     def executa(self):
-        if self.politica == PoliticaNoveltySearch:
+        print(self.politica)
+        if isinstance(self.politica, PoliticaNoveltySearch):
             print("Iniciando simulação com PoliticaNoveltySearch")
             self.executaEvolutivo()
-        # if isinstance(self.politica, PoliticaAleatoria):
-        #     print("Iniciando simulação com PoliticaAleatoria")
-        #     pass
+            return
+        if isinstance(self.politica, PoliticaAleatoria):
+            print("Iniciando simulação com PoliticaAleatoria")
+            self.executaAleatorio()
+            return
         else:
             print("Política desconhecida, não é possível executar a simulação")
+            return
+
+    def executaAleatorio(self):
+        NUMERO_EXERCUCOES = 50
+        numero_passos_por_ex = []
+        print("INÍCIO DA SIMULAÇÃO")
+        for _ in range(NUMERO_EXERCUCOES):
+            self.reset_ambiente()
+            passos = 0
+            if self.agentes:
+                for ag in self.agentes:
+                    ag.setPolitica(self.politica)
+                    for _ in range(self.passos):
+                        if self.politica.acabou:
+                            break
+                        self.ambiente.observacaoPara(ag)
+                        accao = ag.age()
+                        self.ambiente.agir(accao, ag)
+                        passos += 1
+            numero_passos_por_ex.append(passos)
+        media_passos = sum(numero_passos_por_ex) / len(numero_passos_por_ex)
+        print(f"FIM DA SIMULAÇÃO.")
+
+        print(f"Média de Passos: {media_passos:.2f}")
+        plt.figure(figsize=(10, 6))
+        plt.plot(numero_passos_por_ex, marker='o', linestyle='-', color='blue', alpha=0.6, label='Passos por Tentativa')
+        plt.axhline(y=media_passos, color='red', linestyle='--', linewidth=2, label=f'Média ({media_passos:.1f})')
+        plt.title("Desempenho da Política Aleatória/Heurística")
+        plt.xlabel("Número da Execução (1-100)")
+        plt.ylabel("Número de Passos Gastos")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.show()
+
 
     def executaEvolutivo(self):
         TAMANHO_POPULACAO = 160
@@ -104,15 +139,15 @@ class MotorDeSimulacao:
         N_ARQUIVOS = 3
 
         arquivo_novidade = []
+        classe = type(self.politica)
         self.politica.num_passos = self.passos
-        populacao = [self.politica(num_passos=self.passos) for _ in range(TAMANHO_POPULACAO)]  # gera a população inicial com base nessa politica com movimentos aleatórios
+        populacao = [classe(num_passos=self.passos) for _ in range(TAMANHO_POPULACAO)]  # gera a população inicial com base nessa politica com movimentos aleatórios
         media_fitness_por_gen = []
         melhor_caminho_por_gen = []
         melhor_items_global = -1
         melhor_passos_por_gen = 0
         # melhor_caminho_global = []
         # melhor_fitness_global = -1.0
-
         print("INICIO EVOLUÇÃO")
         for gen in range(NUMERO_GERACOES):
             fitness_total = 0
@@ -131,7 +166,6 @@ class MotorDeSimulacao:
                         # self.ambiente.drawingWorld()
                         # time.sleep(1.0)
                         # self.ambiente.observacaoPara(agente)
-
                     # novelty
                     novelty = self.politica.computar_novelty(individuo.comportamento, arquivo_novidade, k = 5)
                     individuo.novelty_score = novelty

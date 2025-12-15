@@ -9,6 +9,7 @@ class AmbienteFarol(Ambiente):
     def __init__(self, sizeX, sizeY, farol):
         super().__init__(sizeX, sizeY)
         self.farol = farol
+        self.objetivos = [farol]
 
     def agir(self, accao: Accao, agente: AgenteFarol):
         if isinstance(accao, AccaoMover):

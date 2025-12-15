@@ -9,9 +9,10 @@ class AmbienteRecolecao(Ambiente):
 
     def __init__(self, sizeX, sizeY, recursos, ninhos):
         super().__init__(sizeX, sizeY)
-        self.recursos = recursos
         self.ninhos = ninhos
+        self.recursos = recursos
         self.pontos = 0
+        self.objetivos = [tuple(item["pos"]) for item in recursos]
 
     def agir(self, accao, agente: AgenteRecolecao):
         # print(f"pontos agente: {agente.mochila}" )

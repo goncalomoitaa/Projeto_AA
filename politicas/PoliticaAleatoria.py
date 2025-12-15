@@ -1,52 +1,50 @@
-# import random
-#
-# from Politica import Politica
-# from agentes.AccaoMover import AccaoMover
-#
-#
-# class PoliticaAleatoria(Politica):
-#
-#     def __init__(self):
-#         super().__init__()
-#
-#     def escolher_accao(self, agente):
-#         # 1) contexto básico (visão, posição, etc.)
-#         ctx = self._extrair_contexto(agente, agente.observacao)
-#
-#         # 2) acções imediatas (recolher / depositar)
-#         accao_imediata = self._accao_imediata(agente, ctx)
-#         if accao_imediata is not None:
-#             return accao_imediata
-#
-#         # 3) objetivos e obstáculos
-#         objetivos, obstaculos = self._objetivos_e_obstaculos(agente, ctx)
-#         visao = ctx["visao"]
-#
-#         # 4) Se houver objetivos, ir greedy ao mais próximo
-#         if objetivos:
-#             alvo = min(
-#                 objetivos,
-#                 key=lambda pos: abs(pos[0] - agente.x) + abs(pos[1] - agente.y)
-#             )
-#
-#             dx = alvo[0] - agente.x
-#             dy = alvo[1] - agente.y
-#
-#             i = 0 if dx == 0 else (1 if dx > 0 else -1)
-#             j = 0 if dy == 0 else (1 if dy > 0 else -1)
-#
-#             nova_pos = (agente.x + i, agente.y + j)
-#             if nova_pos not in obstaculos and visao.get(nova_pos) != "OBSTACULO":
-#                 return AccaoMover((i, j))
-#
-#         # 5) Caso não haja objetivos, movimento aleatório que não seja obstáculo
-#         direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-#         random.shuffle(direcoes)
-#
-#         for di, dj in direcoes:
-#             nova_pos = (agente.x + di, agente.y + dj)
-#             if visao.get(nova_pos) != "OBSTACULO":
-#                 return AccaoMover((di, dj))
-#
-#         # 6) Se não houver nenhuma direção possível, fica parado
-#         return AccaoMover((0, 0))
+import random
+
+from agentes.AccaoMover import AccaoMover
+from politicas.Politica import Politica
+
+
+
+class PoliticaAleatoria(Politica):
+
+    def __init__(self):
+        super().__init__()
+        self.acabou = False
+        self.objetivo = 0
+
+    def escolher_accao(self, agente):
+        obs = agente.observacaoCurrente.sensores["SensorDistancia"]
+        obj = []
+        for i in self.objetivos:
+            if tuple(i) in obs:
+                obj.append(tuple(i))
+        if obj:
+            alvo = min(
+                obj,
+                key=lambda pos: abs(pos[0] - agente.x) + abs(pos[1] - agente.y)
+            )
+            dx = alvo[0] - agente.x
+            dy = alvo[1] - agente.y
+            i = 0 if dx == 0 else (1 if dx > 0 else -1)
+            j = 0 if dy == 0 else (1 if dy > 0 else -1)
+            if abs(dx) >= abs(dy):
+                tentativas = [(i, 0), (0, j)]
+            else :
+                tentativas = [(0, j), (i, 0)]
+
+            for x, y in tentativas:
+                if dx == 0 and dy == 0:
+                    continue
+                nova_pos = (agente.x + dx, agente.y + dy)
+                obstaculo = (obs.get(nova_pos) == "OBSTACULO")
+                if not obstaculo:
+                    return AccaoMover((x, y))
+        direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        random.shuffle(direcoes)
+        for di, dj in direcoes:
+            nova_pos = (agente.x + di, agente.y + dj)
+            if agente.observacaoCurrente.sensores["SensorDistancia"].get(nova_pos) != "OBSTACULO":
+                return AccaoMover((di, dj))
+        return AccaoMover((0, 0))
+
+
