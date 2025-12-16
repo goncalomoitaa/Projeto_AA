@@ -15,8 +15,6 @@ class AmbienteRecolecao(Ambiente):
         self.objetivos = [tuple(item["pos"]) for item in recursos]
 
     def agir(self, accao, agente: AgenteRecolecao):
-        # print(f"mochila: {agente.mochila}" )
-        # print(f"pontos: {self.pontos}")
         if isinstance(accao, AccaoMover):
             dx, dy = accao.direcao
             if (dx, dy) == (0, 0):
@@ -55,9 +53,13 @@ class AmbienteRecolecao(Ambiente):
                 if len(self.ninhos) == 0:
                     agente.politica.acabou = True
                 return
+        if (len(self.recursos) <= 0 and agente.mochila <= 0) or len(self.ninhos) <= 0:
+            agente.politica.acabou = True
 
 
     def drawingWorld(self):
+        print(f"pontos: {self.pontos}")
+        print(self.objetivos)
         world = [[" . " for _ in range(self.sizeX)] for _ in range(self.sizeY)]
         for ninho in self.ninhos:
             world[ninho[1]][ninho[0]] = " N "

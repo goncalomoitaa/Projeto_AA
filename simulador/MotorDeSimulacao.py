@@ -42,6 +42,24 @@ class MotorDeSimulacao:
         self.politica.objetivos = self.ambiente.objetivos
         self.politica.obstaculos = self.ambiente.obstaculos
 
+    def executa(self):
+        print(self.politica)
+        if isinstance(self.politica, PoliticaNoveltySearch):
+            print("Iniciando simulação com PoliticaNoveltySearch")
+            self.executaEvolutivo()
+            return
+        if isinstance(self.politica, PoliticaAleatoria):
+            print("Iniciando simulação com PoliticaAleatoria")
+            self.executaAleatorio()
+            return
+        print(self.politica)
+        if isinstance(self.politica, PoliticaQLearning):
+            print("Iniciando simulação com PoliticaQLearning")
+            self.executaAprendizagemReforco()
+        else:
+            print("Política desconhecida, não é possível executar a simulação")
+            return
+
     def cria(self, nome_do_ficheiro_parametros: str):
         try:
             with open(nome_do_ficheiro_parametros, 'r', encoding="utf-8") as file:
@@ -87,125 +105,48 @@ class MotorDeSimulacao:
         politica = self.dados.get('politica')
         self.definePolitica(politica)
 
-
-
-    def executa(self):
-        print(self.politica)
-        if isinstance(self.politica, PoliticaNoveltySearch):
-            print("Iniciando simulação com PoliticaNoveltySearch")
-            self.executaEvolutivo()
-            return
-        if isinstance(self.politica, PoliticaAleatoria):
-            print("Iniciando simulação com PoliticaAleatoria")
-            self.executaAleatorio()
-            return
-        print(self.politica)
-        if isinstance(self.politica, PoliticaQLearning):
-            print("Iniciando simulação com PoliticaQLearning")
-            self.executaAprendizagemReforco()
-        else:
-            print("Política desconhecida, não é possível executar a simulação")
-            return
-
-    def executaAprendizagemReforco(self):
-        # AUMENTAR DRASTICAMENTE ESTES VALORES
-        NUM_EPISODIOS = 50  # De 50 para 2000
-        MAX_PASSOS = 20 # De 20 para 100 (dar tempo para explorar)
-
-        politica_global = PoliticaQLearning()
-        # Nota: Verifica se na tua PoliticaQLearning o epsilon_decay
-        # está adequado (ex: 0.995 ou 0.999 para 2000 episódios)
-
-        historico_passos = []
-
-        print(f">>> A iniciar Treino Q-Learning ({NUM_EPISODIOS} episódios)...")
-
-        for episodio in range(NUM_EPISODIOS):
-            self.reset_ambiente()
-
-            if not self.agentes: break
-            agente = self.agentes[0]
-            agente.setPolitica(politica_global)
-
-            passos_neste_episodio = 0
-
-            for passo in range(MAX_PASSOS):
-                accao = agente.age()
-                self.ambiente.agir(accao, agente)  # O ambiente chama agente.avaliacaoEstadoAtual -> politica.aprender
-
-                passos_neste_episodio += 1
-
-                # Critério de sucesso
-                if hasattr(politica_global, "acabou") and politica_global.acabou:
-                    politica_global.acabou = False
-                    break
-
-            # Fim do episódio (Reduzir Epsilon)
-            politica_global.fim_episodio()
-
-            historico_passos.append(passos_neste_episodio)
-
-            # Print de progresso a cada 100 episódios para não encher a consola
-            if episodio % 100 == 0:
-                print(f"Episódio {episodio} | Epsilon: {politica_global.epsilon:.3f} | Passos: {passos_neste_episodio}")
-
-        # --- CÓDIGO DO GRÁFICO (Mantém igual, mas ajusta a média móvel) ---
-        media_passos = sum(historico_passos) / len(historico_passos)
-        print(f"Média Global de Passos: {media_passos:.2f}")
-
-        plt.figure(figsize=(10, 6))
-        plt.plot(historico_passos, color='blue', alpha=0.3, linewidth=1, label='Passos por Episódio')
-
-        # Média Móvel (Agora vai aparecer porque tens mais de 50 episódios)
-        if len(historico_passos) >= 50:
-            window = 50
-            media_movel = [sum(historico_passos[i:i + window]) / window for i in range(len(historico_passos) - window)]
-            # Ajuste do eixo X para alinhar a média móvel
-            plt.plot(range(window, len(historico_passos)), media_movel, color='green', linewidth=2,
-                     label='Tendência (Média Móvel)')
-
-        plt.axhline(y=media_passos, color='red', linestyle='--', label=f'Média Global')
-        plt.title("Evolução da Aprendizagem")
-        plt.xlabel("Episódios")
-        plt.ylabel("Passos")
-        plt.legend()
-        plt.show()
-
     def executaAleatorio(self):
-        NUMERO_EXERCUCOES = 3
+        NUMERO_EXECUCOES = 4
         numero_passos_por_ex = []
+        sucessos = 0
+
         print("INÍCIO DA SIMULAÇÃO")
-        for _ in range(NUMERO_EXERCUCOES):
+        for _ in range(NUMERO_EXECUCOES):
             self.reset_ambiente()
-            passos = 0
+            sucesso_execucao = False
             if self.agentes:
                 for ag in self.agentes:
                     ag.setPolitica(self.politica)
                     for _ in range(self.passos):
                         if self.politica.acabou:
+                            # self.ambiente.drawingWorld()
+                            # time.sleep(1)
+                            sucesso_execucao = True
                             break
                         self.ambiente.observacaoPara(ag)
                         accao = ag.age()
                         self.ambiente.agir(accao, ag)
-                        passos += 1
-                        # print(passos)
                         # self.ambiente.drawingWorld()
                         # time.sleep(1)
+            if sucesso_execucao:
+                sucessos += 1
             numero_passos_por_ex.append(self.politica.passo_atual)
         media_passos = sum(numero_passos_por_ex) / len(numero_passos_por_ex)
-        print(f"FIM DA SIMULAÇÃO.")
+        taxa_sucesso = (sucessos / NUMERO_EXECUCOES) * 100
 
+        print(f"FIM DA SIMULAÇÃO.")
         print(f"Média de Passos: {media_passos:.2f}")
+        print(f"Taxa de sucesso: {taxa_sucesso:.2f}%")
+
         plt.figure(figsize=(10, 6))
         plt.plot(numero_passos_por_ex, marker='o', linestyle='-', color='blue', alpha=0.6, label='Passos por Tentativa')
         plt.axhline(y=media_passos, color='red', linestyle='--', linewidth=2, label=f'Média ({media_passos:.1f})')
         plt.title("Desempenho da Política Aleatória/Heurística")
-        plt.xlabel("Número da Execução (1-100)")
+        plt.xlabel(f"Número da Execução (1-{NUMERO_EXECUCOES})")
         plt.ylabel("Número de Passos Gastos")
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.show()
-
 
     def executaEvolutivo(self):
         TAMANHO_POPULACAO = 160
@@ -288,6 +229,72 @@ class MotorDeSimulacao:
         plt.grid(True)
         plt.show()
 
+
+    def executaAprendizagemReforco(self):
+        NUM_EPISODIOS = 50  # O teu pedido
+        MAX_PASSOS = self.passos  # O teu pedido
+
+        LOG_FREQ = 1
+
+        politica_global = PoliticaQLearning(epsilon_decay=0.9)
+        historico_passos = []
+
+        print(f">>> A iniciar Treino Q-Learning ({NUM_EPISODIOS} episódios)...")
+
+        for episodio in range(NUM_EPISODIOS):
+            self.reset_ambiente()
+
+            if not self.agentes:
+                break
+            agente = self.agentes[0]
+            agente.setPolitica(politica_global)
+
+            passos_neste_episodio = 0
+
+            for passo in range(MAX_PASSOS):
+                self.ambiente.observacaoPara(agente)
+                accao = agente.age()
+                self.ambiente.agir(accao, agente)
+                passos_neste_episodio += 1
+
+                if hasattr(politica_global, "acabou") and politica_global.acabou:
+                    politica_global.acabou = False
+                    break
+
+            politica_global.fim_episodio()
+            historico_passos.append(passos_neste_episodio)
+
+            # Log adaptado para mostrar todos os 50
+            if episodio % LOG_FREQ == 0:
+                print(f"Episódio {episodio} | Epsilon: {politica_global.epsilon:.3f} | Passos: {passos_neste_episodio}")
+
+        # --- GRÁFICO ADAPTADO ---
+        media_passos = sum(historico_passos) / len(historico_passos)
+        print(f"Média Global de Passos: {media_passos:.2f}")
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(historico_passos, color='blue', alpha=0.3, linewidth=1, label='Passos por Episódio')
+
+        window = 5
+
+        if len(historico_passos) >= window:
+            media_movel = []
+            for i in range(len(historico_passos) - window + 1):
+                chunk = historico_passos[i: i + window]
+                media = sum(chunk) / window
+                media_movel.append(media)
+
+            plt.plot(range(window - 1, len(historico_passos)), media_movel, color='green', linewidth=2,
+                     label=f'Tendência (Janela {window})')
+
+        plt.axhline(y=media_passos, color='red', linestyle='--', label=f'Média Global')
+        plt.title("Evolução da Aprendizagem (Curta Duração)")
+        plt.xlabel("Episódios")
+        plt.ylabel("Passos")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.show()
+
 if __name__ == "__main__":
-    sim = MotorDeSimulacao([], None).cria("simulador/mundoFarol.json")
+    sim = MotorDeSimulacao([], None).cria("mundoRecolecao.json")
     sim.executa()

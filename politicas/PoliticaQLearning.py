@@ -8,21 +8,21 @@ from politicas.Politica import Politica
 
 class PoliticaQLearning(Politica):
 
-    def __init__(self, learning_rate=0.7, discount_factor=0.9, exploration_rate=1.0, epsilon_decay=0.9):
+    def __init__(self, learning_rate=0.8, discount_factor=0.95, exploration_rate=0.2, epsilon_decay=1.0):
         super().__init__()
         self.alpha = learning_rate #α
         self.gamma = discount_factor #γ
         self.epsilon = exploration_rate #ε
-        self.epsilon_decay = epsilon_decay
         self.q_table = {} # Tabels Q
-        self.acabou = False
+        self.epsilon_decay = epsilon_decay
+        self.ultimo_estado = None
+        self.ultima_accao = None
+        self.accoes = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         self.objetivo = 0
         self.passo_atual = 0
         self.items_recolhidos = 0
-        self.accoes = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        self.acabou = False
         self.tem_carga = False
-        self.ultimo_estado = None
-        self.ultima_accao = None
 
     def pegar_estado(self, state):
         if state not in self.q_table:
@@ -33,6 +33,7 @@ class PoliticaQLearning(Politica):
         estado = (agente.x, agente.y, self.tem_carga)
         if random.random() < self.epsilon:
             accao = random.randint(0, len(self.accoes) - 1)
+            print(accao)
         else:
             q_valores = self.pegar_estado(estado)
             max_q = np.max(q_valores)
