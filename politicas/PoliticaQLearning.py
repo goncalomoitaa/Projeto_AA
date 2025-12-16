@@ -1,28 +1,57 @@
-from Politica import Politica
+import random
+
+import numpy as np
+
+from agentes.AccaoMover import AccaoMover
+from politicas.Politica import Politica
+
 
 class PoliticaQLearning(Politica):
-    def __init__(self, acciones, alpha=0.1, gamma=0.9, epsilon=0.1):
-        super().__init__(acciones)
-        self.q_table = {}
-        self.alpha = alpha  # Tasa de aprendizaje
-        self.gamma = gamma  # Factor de descuento
-        self.epsilon = epsilon  # Tasa de exploración
 
-    def get_q_value(self, estado, accion):
-        return self.q_table.get((estado, accion), 0.0)
+    def __init__(self, learning_rate=0.7, discount_factor=0.9, exploration_rate=1.0, epsilon_decay=0.9):
+        super().__init__()
+        self.alpha = learning_rate #α
+        self.gamma = discount_factor #γ
+        self.epsilon = exploration_rate #ε
+        self.epsilon_decay = epsilon_decay
+        self.q_table = {} # Tabels Q
+        self.acabou = False
+        self.objetivo = 0
+        self.passo_atual = 0
+        self.items_recolhidos = 0
+        self.accoes = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        self.tem_carga = False
+        self.ultimo_estado = None
+        self.ultima_accao = None
 
-    def elegir_accion(self, estado):
-        import random
+    def pegar_estado(self, state):
+        if state not in self.q_table:
+            self.q_table[state] = [0 for _ in range(len(self.accoes))]
+        return self.q_table[state]
+
+    def escolher_accao(self, agente):
+        estado = (agente.x, agente.y, self.tem_carga)
         if random.random() < self.epsilon:
-            return random.choice(self.acciones)  # Exploración
+            accao = random.randint(0, len(self.accoes) - 1)
         else:
-            q_values = [self.get_q_value(estado, a) for a in self.acciones]
-            max_q = max(q_values)
-            mejores_acciones = [a for a, q in zip(self.acciones, q_values) if q == max_q]
-            return random.choice(mejores_acciones)  # Explotación
+            q_valores = self.pegar_estado(estado)
+            max_q = np.max(q_valores)
+            best_accao = [i for i, q in enumerate(q_valores) if q == max_q]
+            accao = random.choice(best_accao)
+        self.ultimo_estado = estado
+        self.ultima_accao = accao
+        return AccaoMover(self.accoes[accao])
 
-    def actualizar(self, estado, accion, recompensa, siguiente_estado):
-        max_q_siguiente = max([self.get_q_value(siguiente_estado, a) for a in self.acciones], default=0.0)
-        q_valor_actual = self.get_q_value(estado, accion)
-        nuevo_q_valor = q_valor_actual + self.alpha * (recompensa + self.gamma * max_q_siguiente - q_valor_actual)
-        self.q_table[(estado, accion)] = nuevo_q_valor
+    def aprender(self, agente, recompensa):
+        if self.ultimo_estado is None:
+            return
+        estado_atual = (agente.x, agente.y, self.tem_carga)
+        q_antigo = self.pegar_estado(self.ultimo_estado)[self.ultima_accao]
+        max_q_novo = np.max(self.pegar_estado(estado_atual))
+        q_novo = (1 - self.alpha) * q_antigo + self.alpha * (recompensa + self.gamma * max_q_novo)
+        self.q_table[self.ultimo_estado][self.ultima_accao] = q_novo
+
+    def fim_episodio(self):
+        if self.epsilon > 0.01:
+            self.epsilon *= self.epsilon_decay
+        self.ultimo_estado = None

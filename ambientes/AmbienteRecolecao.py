@@ -36,11 +36,12 @@ class AmbienteRecolecao(Ambiente):
                 else:
                     agente.x = x
                     agente.y = y
+                    agente.politica.objetivo -= 1
         if isinstance(accao, AccaoRecolher):
             for rec in self.recursos:
                 if [agente.x, agente.y] == rec["pos"]:
                     self.objetivos.remove(agente.get_pos())
-                    agente.avaliacaoEstadoAtual(30)
+                    agente.avaliacaoEstadoAtual(100)
                     ponto = rec["valor"]
                     agente.mochila += ponto
                     self.recursos.remove(rec)

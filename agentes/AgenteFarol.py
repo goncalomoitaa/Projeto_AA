@@ -12,4 +12,7 @@ class AgenteFarol(Agente):
         return accao
 
     def avaliacaoEstadoAtual(self, recompensa):
-        self.politica.objetivo += recompensa
+        # AQUI ESTÁ A CORREÇÃO:
+        # Temos de chamar o método 'aprender' para atualizar a Tabela Q
+        if hasattr(self.politica, 'aprender'):
+            self.politica.aprender(self, recompensa)

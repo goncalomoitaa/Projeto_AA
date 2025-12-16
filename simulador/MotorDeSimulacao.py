@@ -15,6 +15,8 @@ from agentes.AgenteFarol import AgenteFarol
 from ambientes.AmbienteRecolecao import AmbienteRecolecao
 from politicas.PoliticaAleatoria import PoliticaAleatoria
 from politicas.PoliticaNoveltySearch import PoliticaNoveltySearch
+from politicas.PoliticaQLearning import PoliticaQLearning
+
 
 class MotorDeSimulacao:
 
@@ -35,6 +37,8 @@ class MotorDeSimulacao:
             self.politica = PoliticaAleatoria()
             if isinstance(self.ambiente, AmbienteRecolecao):
                 self.politica.ninhos = self.dados.get('ninhos')
+        if politica == "PoliticaQLearning":
+            self.politica = PoliticaQLearning()
         self.politica.objetivos = self.ambiente.objetivos
         self.politica.obstaculos = self.ambiente.obstaculos
 
@@ -95,9 +99,77 @@ class MotorDeSimulacao:
             print("Iniciando simulação com PoliticaAleatoria")
             self.executaAleatorio()
             return
+        print(self.politica)
+        if isinstance(self.politica, PoliticaQLearning):
+            print("Iniciando simulação com PoliticaQLearning")
+            self.executaAprendizagemReforco()
         else:
             print("Política desconhecida, não é possível executar a simulação")
             return
+
+    def executaAprendizagemReforco(self):
+        # AUMENTAR DRASTICAMENTE ESTES VALORES
+        NUM_EPISODIOS = 50  # De 50 para 2000
+        MAX_PASSOS = 20 # De 20 para 100 (dar tempo para explorar)
+
+        politica_global = PoliticaQLearning()
+        # Nota: Verifica se na tua PoliticaQLearning o epsilon_decay
+        # está adequado (ex: 0.995 ou 0.999 para 2000 episódios)
+
+        historico_passos = []
+
+        print(f">>> A iniciar Treino Q-Learning ({NUM_EPISODIOS} episódios)...")
+
+        for episodio in range(NUM_EPISODIOS):
+            self.reset_ambiente()
+
+            if not self.agentes: break
+            agente = self.agentes[0]
+            agente.setPolitica(politica_global)
+
+            passos_neste_episodio = 0
+
+            for passo in range(MAX_PASSOS):
+                accao = agente.age()
+                self.ambiente.agir(accao, agente)  # O ambiente chama agente.avaliacaoEstadoAtual -> politica.aprender
+
+                passos_neste_episodio += 1
+
+                # Critério de sucesso
+                if hasattr(politica_global, "acabou") and politica_global.acabou:
+                    politica_global.acabou = False
+                    break
+
+            # Fim do episódio (Reduzir Epsilon)
+            politica_global.fim_episodio()
+
+            historico_passos.append(passos_neste_episodio)
+
+            # Print de progresso a cada 100 episódios para não encher a consola
+            if episodio % 100 == 0:
+                print(f"Episódio {episodio} | Epsilon: {politica_global.epsilon:.3f} | Passos: {passos_neste_episodio}")
+
+        # --- CÓDIGO DO GRÁFICO (Mantém igual, mas ajusta a média móvel) ---
+        media_passos = sum(historico_passos) / len(historico_passos)
+        print(f"Média Global de Passos: {media_passos:.2f}")
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(historico_passos, color='blue', alpha=0.3, linewidth=1, label='Passos por Episódio')
+
+        # Média Móvel (Agora vai aparecer porque tens mais de 50 episódios)
+        if len(historico_passos) >= 50:
+            window = 50
+            media_movel = [sum(historico_passos[i:i + window]) / window for i in range(len(historico_passos) - window)]
+            # Ajuste do eixo X para alinhar a média móvel
+            plt.plot(range(window, len(historico_passos)), media_movel, color='green', linewidth=2,
+                     label='Tendência (Média Móvel)')
+
+        plt.axhline(y=media_passos, color='red', linestyle='--', label=f'Média Global')
+        plt.title("Evolução da Aprendizagem")
+        plt.xlabel("Episódios")
+        plt.ylabel("Passos")
+        plt.legend()
+        plt.show()
 
     def executaAleatorio(self):
         NUMERO_EXERCUCOES = 3
