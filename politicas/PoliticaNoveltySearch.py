@@ -11,7 +11,7 @@ class PoliticaNoveltySearch(Politica):
         self.lista_accoes = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         self.num_passos = num_passos
         self.acabou = False
-        if genotipo: #Todo vai ter o depositar e recolher?
+        if genotipo:
             self.genotipo = genotipo #recebe os genes do pai
         else:
             self.genotipo = [random.choice(self.lista_accoes) for _ in range(self.num_passos)] #na primeira geração como não tem genes o movimento tem que ser aleatório
@@ -20,17 +20,17 @@ class PoliticaNoveltySearch(Politica):
         #variáveis que criamos para ver a evolução entre gerações
         self.fitness_objetivo = 0.0
         self.objetivo = 0
-        self.novelty_score = 0
+        self.novelty_score = 0.0
         #Todo definimos as métricas todas mesmo as que façam parte só de um ambiente?
         self.passo_atual = 0
         self.items_recolhidos = 0
         self.score_recursos = 0 #mudar
 
     def reset(self): #única coisa que não da reset é o genótipo, ou seja, se o caminho for bom guarda ele e já nasce a saber
-        self.passo_atual = 0
         self.comportamento = set()
         self.caminho = []
         self.items_recolhidos = 0
+        self.passo_atual = 0
         self.objetivo = 0
         self.score_recursos = 0
 
@@ -49,14 +49,6 @@ class PoliticaNoveltySearch(Politica):
         for i in range(len(self.genotipo)):
             if random.random() < taxa_mutacao:
                 self.genotipo[i] = random.choice(self.lista_accoes)
-
-    @staticmethod
-    def crossover(parent1, parent2):#combina genótipo de dois pais para criar os filhos
-        #min entre o p1 e p2?
-        point = random.randint(1, len(parent1.genotipo) - 1)
-        filho1_geno = parent1.genotipo[:point] + parent2.genotipo[point:]
-        filho2_geno = parent2.genotipo[:point] + parent1.genotipo[point:]
-        return PoliticaNoveltySearch(filho1_geno), PoliticaNoveltySearch(filho2_geno)
 
     def calcular_fitness(self):
         return self.objetivo
@@ -77,6 +69,14 @@ class PoliticaNoveltySearch(Politica):
             return sum(distancias[:k]) / k
         else:
             return sum(distancias) / len(distancias)
+
+    @staticmethod
+    def crossover(parent1, parent2):#combina genótipo de dois pais para criar os filhos
+        #min entre o p1 e p2?
+        point = random.randint(1, len(parent1.genotipo) - 1)
+        filho1_geno = parent1.genotipo[:point] + parent2.genotipo[point:]
+        filho2_geno = parent2.genotipo[:point] + parent1.genotipo[point:]
+        return PoliticaNoveltySearch(filho1_geno), PoliticaNoveltySearch(filho2_geno)
 
     @staticmethod
     def seleciona_pais(populacao, tamanho_torneio):

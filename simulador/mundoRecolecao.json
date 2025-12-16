@@ -1,9 +1,9 @@
 {
   "ambiente": "Ambiente Recolecao",
-  "politica": "PoliticaAleatoria",
+  "politica": "PoliticaNoveltySearch",
   "sizeX": 5,
   "sizeY": 5,
-  "passos": 30,
+  "passos": 20,
   "agentes": [
     { "nome_agente": "A", "pos_agente": [0, 0] }
   ],
@@ -11,7 +11,8 @@
     [1, 0]
   ],
   "ninhos": [
-    [3,3]
+    [3, 3],
+    [0, 4]
   ],
   "recursos": [
     { "recurso": "R1", "valor": 1, "pos": [3, 0] },

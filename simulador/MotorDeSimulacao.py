@@ -164,9 +164,8 @@ class MotorDeSimulacao:
         media_fitness_por_gen = []
         melhor_caminho_por_gen = []
         melhor_items_global = -1
-        melhor_passos_por_gen = 0
-        # melhor_caminho_global = []
-        # melhor_fitness_global = -1.0
+        melhor_caminho_global = []
+        melhor_fitness_global = -1.0
         print("INICIO EVOLUÇÃO")
         for gen in range(NUMERO_GERACOES):
             fitness_total = 0
@@ -176,15 +175,12 @@ class MotorDeSimulacao:
                 if len(self.agentes) > 0:
                     agente = self.agentes[0]
                     agente.setPolitica(individuo)
-                    # passos = 0
                     for _ in range(self.passos):
                         if individuo.acabou:
                             break
                         self.ambiente.observacaoPara(agente)
                         accao = agente.age()
                         self.ambiente.agir(accao, agente)
-                        # passos += 1
-                        # print(passos)
                         # self.ambiente.drawingWorld()
                         # time.sleep(1.0)
                     # novelty
@@ -196,13 +192,14 @@ class MotorDeSimulacao:
                     fitness_total += individuo.fitness_objetivo
             populacao.sort(key=lambda x: x.fitness_objetivo, reverse=True)
             melhor_da_gen = populacao[0]
+            if melhor_da_gen.items_recolhidos > melhor_items_global:
+                melhor_fitness_global = melhor_da_gen.fitness_objetivo
+                melhor_caminho_global = copy.deepcopy(melhor_da_gen)
+                print(f"   >>> Novo Recorde Global na Gen {gen + 1}: {melhor_fitness_global:.2f}")
             media_fitness = fitness_total / TAMANHO_POPULACAO
             media_fitness_por_gen.append(media_fitness)
             melhor_caminho_por_gen.append(melhor_da_gen.caminho)
-            print(f"Gen {gen + 1}: Média de fitness: {media_fitness:.2f} " f"(Itens: {melhor_da_gen.items_recolhidos}, Nov: {melhor_da_gen.novelty_score:.4f}) " f"Passos: {melhor_da_gen.passo_atual}")
-            if melhor_da_gen.items_recolhidos > melhor_items_global:
-                melhor_items_global = melhor_da_gen.items_recolhidos
-                melhor_caminho_global = list(melhor_da_gen.caminho)
+            print(f"Gen {gen + 1}: Média de fitness: {media_fitness:.2f} " f"(Itens_melhor_da_gen: {melhor_da_gen.items_recolhidos}, Nov_melhor_da_gen: {melhor_da_gen.novelty_score:.4f}) " f"Passos_melhor_da_gen: {melhor_da_gen.passo_atual}")
             populacao.sort(key=lambda x: x.fitness_objetivo, reverse=True)
             for i in range(N_ARQUIVOS):
                 arquivo_novidade.append(populacao[i].comportamento)
@@ -221,6 +218,30 @@ class MotorDeSimulacao:
             populacao = nova_populacao
         print("EVOLUÇÃO COMPLETA")
 
+        # --- ADICIONADO: Replay do Melhor Absoluto no final ---
+        if melhor_caminho_global:
+            print(f"\n>>> A MOSTRAR REPLAY DO CAMPEÃO (Fitness: {melhor_fitness_global:.2f}) <<<")
+            self.reset_ambiente()
+            agente_demo = self.agentes[0]
+            agente_demo.setPolitica(melhor_caminho_global)
+
+            # Reset forçado para garantir que ele corre de novo
+            melhor_caminho_global.acabou = False
+            melhor_caminho_global.passo_atual = 0
+            melhor_caminho_global.items_recolhidos = 0
+            if hasattr(melhor_caminho_global, 'tem_carga'): melhor_caminho_global.tem_carga = False
+
+            for _ in range(self.passos):
+                if melhor_caminho_global.acabou:
+                    print(">>> Objetivo alcançado pelo campeão! <<<")
+                    break
+                self.ambiente.observacaoPara(agente_demo)
+                accao = agente_demo.age()
+                self.ambiente.agir(accao, agente_demo)
+                self.ambiente.drawingWorld()
+                time.sleep(0.5)
+        # ------------------------------------------------------
+
         plt.figure(figsize=(10, 5))
         plt.plot(media_fitness_por_gen, marker='o')
         plt.title("Média de Fitness por Geração")
@@ -231,12 +252,20 @@ class MotorDeSimulacao:
 
 
     def executaAprendizagemReforco(self):
+        # --- CONFIGURAÇÃO PARA TESTE RÁPIDO ---
         NUM_EPISODIOS = 50  # O teu pedido
         MAX_PASSOS = self.passos  # O teu pedido
 
+        # Ajuste Automático de Logs:
+        # Se forem poucos episódios (< 100), imprime TODOS os episódios.
         LOG_FREQ = 1
 
+        # --- CRÍTICO: Ajuste do Epsilon Decay ---
+        # Para 50 episódios, 0.999 é LENTO DEMAIS (o epsilon terminaria em 95%).
+        # Precisamos de um decay rápido (0.9) para que em 50 episódios ele chegue a 0.
+        # 0.9^50 ~= 0.005 (Exploração termina no fim do treino)
         politica_global = PoliticaQLearning(epsilon_decay=0.9)
+
         historico_passos = []
 
         print(f">>> A iniciar Treino Q-Learning ({NUM_EPISODIOS} episódios)...")
@@ -275,6 +304,8 @@ class MotorDeSimulacao:
         plt.figure(figsize=(10, 6))
         plt.plot(historico_passos, color='blue', alpha=0.3, linewidth=1, label='Passos por Episódio')
 
+        # Para 50 episódios, uma janela de 50 (como tinhas) não funciona.
+        # Vamos usar uma janela de 5 (10% do total).
         window = 5
 
         if len(historico_passos) >= window:
@@ -284,6 +315,7 @@ class MotorDeSimulacao:
                 media = sum(chunk) / window
                 media_movel.append(media)
 
+            # Ajuste do eixo X para a linha verde
             plt.plot(range(window - 1, len(historico_passos)), media_movel, color='green', linewidth=2,
                      label=f'Tendência (Janela {window})')
 
@@ -296,5 +328,5 @@ class MotorDeSimulacao:
         plt.show()
 
 if __name__ == "__main__":
-    sim = MotorDeSimulacao([], None).cria("mundoRecolecao.json")
+    sim = MotorDeSimulacao([], None).cria("mundoFarol.json")
     sim.executa()
