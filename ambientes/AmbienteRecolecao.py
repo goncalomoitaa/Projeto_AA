@@ -1,5 +1,6 @@
-from agentes.AgenteRecolecao import AgenteRecolecao
+import math
 from ambientes.Ambiente import Ambiente
+from agentes.AgenteRecolecao import AgenteRecolecao
 from agentes.AccaoMover import AccaoMover
 from agentes.AccaoRecolher import AccaoRecolher
 from agentes.AccaoDepositar import AccaoDepositar
@@ -12,50 +13,108 @@ class AmbienteRecolecao(Ambiente):
         self.ninhos = ninhos
         self.recursos = recursos
         self.pontos = 0
-        self.objetivos = [tuple(item["pos"]) for item in recursos]
+        self.obstaculos = []
+
+    def calcular_distancia_minima(self, agente):
+        x, y = agente.x, agente.y
+
+        if agente.mochila > 0:
+            targets = self.ninhos
+        else:
+            targets = [tuple(r["pos"]) for r in self.recursos]
+
+        if not targets:
+            return 0
+
+        min_dist = float('inf')
+        for tx, ty in targets:
+            dist = abs(tx - x) + abs(ty - y)
+            if dist < min_dist:
+                min_dist = dist
+        return min_dist
 
     def agir(self, accao, agente: AgenteRecolecao):
+
         if isinstance(accao, AccaoMover):
             dx, dy = accao.direcao
             if (dx, dy) == (0, 0):
+                agente.avaliacaoEstadoAtual(-5)
                 return
+
+            x_novo = agente.x + dx
+            y_novo = agente.y + dy
+
+
+            if (x_novo < 0 or x_novo >= self.sizeX or
+                    y_novo < 0 or y_novo >= self.sizeY or
+                    (x_novo, y_novo) in self.obstaculos):
+
+                agente.avaliacaoEstadoAtual(-10)
+                return
+
+            for outro in self.agentes:
+                if outro != agente and (x_novo, y_novo) == (outro.x, outro.y):
+                    agente.avaliacaoEstadoAtual(-10)
+                    return
+
+            dist_antes = self.calcular_distancia_minima(agente)
+
+            agente.x = x_novo
+            agente.y = y_novo
+
+            dist_depois = self.calcular_distancia_minima(agente)
+
+            if dist_depois < dist_antes:
+                agente.avaliacaoEstadoAtual(0.5)
             else:
-                x = agente.x + dx
-                y = agente.y + dy
-                if (x, y) in self.obstaculos:
-                    return
-                for outro_agente in self.agentes:
-                    if outro_agente != agente and (x, y) == (outro_agente.x, outro_agente.y):
-                        return
-                if x < 0 or x >= self.sizeX:
-                    return
-                if y < 0 or y >= self.sizeY:
-                    return
-                else:
-                    agente.x = x
-                    agente.y = y
-                    agente.politica.objetivo -= 1
+                agente.avaliacaoEstadoAtual(-2.0)
+            return
+
         if isinstance(accao, AccaoRecolher):
+            recurso_alvo = None
             for rec in self.recursos:
                 if [agente.x, agente.y] == rec["pos"]:
-                    self.objetivos.remove(agente.get_pos())
-                    agente.avaliacaoEstadoAtual(100)
-                    ponto = rec["valor"]
-                    agente.mochila += ponto
-                    self.recursos.remove(rec)
-                    return
+                    recurso_alvo = rec
+                    break
+
+            if recurso_alvo:
+                self.recursos.remove(recurso_alvo)
+                agente.mochila += recurso_alvo["valor"]
+
+                agente.politica.items_recolhidos += 1
+                agente.avaliacaoEstadoAtual(50)
+            else:
+                agente.avaliacaoEstadoAtual(-5)
+            return
+
         if isinstance(accao, AccaoDepositar):
-            if (agente.x, agente.y) in self.ninhos:
-                agente.avaliacaoEstadoAtual(100)
+            pos_atual = [agente.x, agente.y]
+
+            ninho_encontrado = False
+            for n in self.ninhos:
+                if list(n) == list(pos_atual):
+                    ninho_encontrado = True
+                    break
+
+            if ninho_encontrado:
                 self.pontos += agente.mochila
                 agente.mochila = 0
-                self.ninhos.remove((agente.x, agente.y))
+
+                agente.politica.items_recolhidos += 1
+                agente.avaliacaoEstadoAtual(100)
+
+                for i, n in enumerate(self.ninhos):
+                    if list(n) == list(pos_atual):
+                        del self.ninhos[i]
+                        break
+
                 if len(self.ninhos) == 0:
                     agente.politica.acabou = True
-                return
-        if (len(self.recursos) <= 0 and agente.mochila <= 0) or len(self.ninhos) <= 0:
-            agente.politica.acabou = True
-
+                elif len(self.recursos) == 0 and agente.mochila == 0:
+                    agente.politica.acabou = True
+            else:
+                agente.avaliacaoEstadoAtual(-5)
+            return
 
     def drawingWorld(self):
         print(f"pontos: {self.pontos}")

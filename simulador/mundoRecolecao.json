@@ -1,21 +1,21 @@
 {
   "ambiente": "Ambiente Recolecao",
-  "politica": "PoliticaNoveltySearch",
+  "politica": "PoliticaQLearning",
   "sizeX": 5,
   "sizeY": 5,
   "passos": 20,
   "agentes": [
-    { "nome_agente": "A", "pos_agente": [0, 0] }
+    { "nome_agente": "A", "pos_agente": [0, 0]}
   ],
   "obstaculos": [
     [1, 0]
   ],
   "ninhos": [
-    [3, 3],
-    [0, 4]
+    [4,4],
+    [0,4]
   ],
   "recursos": [
-    { "recurso": "R1", "valor": 1, "pos": [3, 0] },
+    { "recurso": "R1", "valor": 1, "pos": [2, 0] },
     { "recurso": "R2", "valor": 2, "pos": [2, 2] }
   ]
 }

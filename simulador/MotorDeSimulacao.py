@@ -106,7 +106,7 @@ class MotorDeSimulacao:
         self.definePolitica(politica)
 
     def executaAleatorio(self):
-        NUMERO_EXECUCOES = 4
+        NUMERO_EXECUCOES = 50
         numero_passos_por_ex = []
         sucessos = 0
 
@@ -195,7 +195,7 @@ class MotorDeSimulacao:
             if melhor_da_gen.items_recolhidos > melhor_items_global:
                 melhor_fitness_global = melhor_da_gen.fitness_objetivo
                 melhor_caminho_global = copy.deepcopy(melhor_da_gen)
-                print(f"   >>> Novo Recorde Global na Gen {gen + 1}: {melhor_fitness_global:.2f}")
+                # print(f"   >>> Novo Recorde Global na Gen {gen + 1}: {melhor_fitness_global:.2f}")
             media_fitness = fitness_total / TAMANHO_POPULACAO
             media_fitness_por_gen.append(media_fitness)
             melhor_caminho_por_gen.append(melhor_da_gen.caminho)
@@ -218,14 +218,12 @@ class MotorDeSimulacao:
             populacao = nova_populacao
         print("EVOLUÇÃO COMPLETA")
 
-        # --- ADICIONADO: Replay do Melhor Absoluto no final ---
         if melhor_caminho_global:
             print(f"\n>>> A MOSTRAR REPLAY DO CAMPEÃO (Fitness: {melhor_fitness_global:.2f}) <<<")
             self.reset_ambiente()
             agente_demo = self.agentes[0]
             agente_demo.setPolitica(melhor_caminho_global)
 
-            # Reset forçado para garantir que ele corre de novo
             melhor_caminho_global.acabou = False
             melhor_caminho_global.passo_atual = 0
             melhor_caminho_global.items_recolhidos = 0
@@ -233,14 +231,12 @@ class MotorDeSimulacao:
 
             for _ in range(self.passos):
                 if melhor_caminho_global.acabou:
-                    print(">>> Objetivo alcançado pelo campeão! <<<")
                     break
                 self.ambiente.observacaoPara(agente_demo)
                 accao = agente_demo.age()
                 self.ambiente.agir(accao, agente_demo)
                 self.ambiente.drawingWorld()
                 time.sleep(0.5)
-        # ------------------------------------------------------
 
         plt.figure(figsize=(10, 5))
         plt.plot(media_fitness_por_gen, marker='o')
@@ -250,23 +246,20 @@ class MotorDeSimulacao:
         plt.grid(True)
         plt.show()
 
-
     def executaAprendizagemReforco(self):
-        # --- CONFIGURAÇÃO PARA TESTE RÁPIDO ---
-        NUM_EPISODIOS = 50  # O teu pedido
-        MAX_PASSOS = self.passos  # O teu pedido
-
-        # Ajuste Automático de Logs:
-        # Se forem poucos episódios (< 100), imprime TODOS os episódios.
+        NUM_EPISODIOS = 100
+        MAX_PASSOS = 50
         LOG_FREQ = 1
 
-        # --- CRÍTICO: Ajuste do Epsilon Decay ---
-        # Para 50 episódios, 0.999 é LENTO DEMAIS (o epsilon terminaria em 95%).
-        # Precisamos de um decay rápido (0.9) para que em 50 episódios ele chegue a 0.
-        # 0.9^50 ~= 0.005 (Exploração termina no fim do treino)
-        politica_global = PoliticaQLearning(epsilon_decay=0.9)
+        politica_global = PoliticaQLearning(
+            learning_rate=0.7,
+            discount_factor=0.95,
+            exploration_rate=1.0,
+            epsilon_decay=0.95
+        )
 
         historico_passos = []
+        historico_items = []
 
         print(f">>> A iniciar Treino Q-Learning ({NUM_EPISODIOS} episódios)...")
 
@@ -274,59 +267,56 @@ class MotorDeSimulacao:
             self.reset_ambiente()
 
             if not self.agentes:
+                print("Erro: Nenhum agente no ambiente.")
                 break
+
             agente = self.agentes[0]
             agente.setPolitica(politica_global)
 
-            passos_neste_episodio = 0
+            passos_realizados = 0
 
             for passo in range(MAX_PASSOS):
+
                 self.ambiente.observacaoPara(agente)
+
                 accao = agente.age()
+
                 self.ambiente.agir(accao, agente)
-                passos_neste_episodio += 1
+
+                passos_realizados += 1
 
                 if hasattr(politica_global, "acabou") and politica_global.acabou:
-                    politica_global.acabou = False
                     break
 
-            politica_global.fim_episodio()
-            historico_passos.append(passos_neste_episodio)
+            items_total = politica_global.items_recolhidos
+            historico_passos.append(passos_realizados)
+            historico_items.append(items_total)
 
-            # Log adaptado para mostrar todos os 50
             if episodio % LOG_FREQ == 0:
-                print(f"Episódio {episodio} | Epsilon: {politica_global.epsilon:.3f} | Passos: {passos_neste_episodio}")
+                print(f"Episódio {episodio} | Epsilon: {politica_global.epsilon:.3f} | "
+                      f"Passos: {passos_realizados} | Items (Apanhar+Depositar): {items_total}")
 
-        # --- GRÁFICO ADAPTADO ---
-        media_passos = sum(historico_passos) / len(historico_passos)
-        print(f"Média Global de Passos: {media_passos:.2f}")
+            politica_global.fim_episodio()
 
-        plt.figure(figsize=(10, 6))
-        plt.plot(historico_passos, color='blue', alpha=0.3, linewidth=1, label='Passos por Episódio')
+        print(f"Média Final de Passos: {sum(historico_passos[-10:]) / 10:.2f}")
 
-        # Para 50 episódios, uma janela de 50 (como tinhas) não funciona.
-        # Vamos usar uma janela de 5 (10% do total).
-        window = 5
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
-        if len(historico_passos) >= window:
-            media_movel = []
-            for i in range(len(historico_passos) - window + 1):
-                chunk = historico_passos[i: i + window]
-                media = sum(chunk) / window
-                media_movel.append(media)
+        ax1.plot(historico_passos, color='blue', alpha=0.6, label='Passos')
+        ax1.set_title("Eficiência (Passos para Concluir)")
+        ax1.set_ylabel("Passos")
+        ax1.grid(True, alpha=0.3)
 
-            # Ajuste do eixo X para a linha verde
-            plt.plot(range(window - 1, len(historico_passos)), media_movel, color='green', linewidth=2,
-                     label=f'Tendência (Janela {window})')
+        ax2.plot(historico_items, color='green', alpha=0.6, label='Items (Ações de Sucesso)')
+        ax2.set_title("Eficácia (Soma de Recolhas e Depósitos)")
+        ax2.set_xlabel("Episódios")
+        ax2.set_ylabel("Total Ações")
+        ax2.set_ylim(0, 5)
+        ax2.grid(True, alpha=0.3)
 
-        plt.axhline(y=media_passos, color='red', linestyle='--', label=f'Média Global')
-        plt.title("Evolução da Aprendizagem (Curta Duração)")
-        plt.xlabel("Episódios")
-        plt.ylabel("Passos")
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
         plt.show()
 
 if __name__ == "__main__":
-    sim = MotorDeSimulacao([], None).cria("mundoFarol.json")
+    sim = MotorDeSimulacao([], None).cria("mundoRecolecao.json")
     sim.executa()

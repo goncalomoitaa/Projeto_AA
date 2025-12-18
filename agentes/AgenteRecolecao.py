@@ -13,18 +13,19 @@ class AgenteRecolecao(Agente):
         self.mochila = 0
 
     def age(self):
+        if hasattr(self.politica, 'tem_carga'):
+            self.politica.tem_carga = (self.mochila > 0)
         obs = self.observacaoCurrente.sensores["SensorDistancia"]
         pos = (self.x, self.y)
         obj = obs.get(pos)
         if obj == "NINHO" and self.mochila > 0:
-            self.politica.passo_atual += 1
             return AccaoDepositar()
         if obj == "RECURSO":
-            self.politica.passo_atual += 1
             return AccaoRecolher()
         return self.politica.escolher_accao(self)
 
     def avaliacaoEstadoAtual(self, recompensa):
-        self.politica.objetivo += recompensa
-        self.politica.items_recolhidos += 1
+        if hasattr(self.politica, 'aprender'):
+            self.politica.aprender(self, recompensa)
+        # self.politica.objetivo += recompensa
 
