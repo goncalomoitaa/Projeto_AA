@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 from agentes.Observacao import Observacao
 
-
 class Agente(ABC):
 
     def __init__(self, nome: str, x: int, y: int):
@@ -12,6 +11,7 @@ class Agente(ABC):
         self.sensoresAgente = []
         self.observacaoCurrente = None
         self.politica = None
+        self.pegos = 0
 
     def observacao(self, obs: Observacao):
         self.observacaoCurrente = obs
@@ -28,9 +28,11 @@ class Agente(ABC):
     def setPolitica(self, p):
         self.politica = p
 
-    @abstractmethod
-    def avaliacaoEstadoAtual(self, recompensa):
-        pass
+    def avaliacaoEstadoAtual(self, recompensa): #recompensas
+        if hasattr(self.politica, 'aprender'): #se tiver o met aprender do QLearning faz isso
+            self.politica.aprender(self, recompensa)
+        else:
+            self.politica.objetivo += recompensa
 
     @abstractmethod
     def age(self):

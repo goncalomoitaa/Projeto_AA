@@ -1,6 +1,5 @@
 from agentes.Accao import Accao
 
-
 class AccaoMover(Accao):
 
     def __init__(self, direcao):

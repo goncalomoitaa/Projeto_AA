@@ -1,6 +1,5 @@
 from agentes.Accao import Accao
 
-
 class AccaoRecolher(Accao):
 
     def __init__(self):

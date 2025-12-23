@@ -3,7 +3,6 @@ from ambientes.Ambiente import Ambiente
 from agentes.AccaoMover import AccaoMover
 from agentes.AgenteFarol import AgenteFarol
 
-
 class AmbienteFarol(Ambiente):
 
     def __init__(self, sizeX, sizeY, farol):
@@ -41,10 +40,10 @@ class AmbienteFarol(Ambiente):
                     dist_antiga = abs(agente.x - fx) + abs(agente.y - fy)
                     dist_nova = abs(x - fx) + abs(y - fy)
                     recompensa_progresso = (dist_antiga - dist_nova)
-                    agente.avaliacaoEstadoAtual(recompensa_progresso - 0.1)
+                    agente.avaliacaoEstadoAtual(recompensa_progresso)
                     agente.x = x
                     agente.y = y
-                    agente.avaliacaoEstadoAtual(-0.4)
+                    agente.avaliacaoEstadoAtual(-0.5) #penalidade a cada passo
                     return
 
     def drawingWorld(self):

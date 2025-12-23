@@ -20,10 +20,11 @@ class PoliticaAleatoria(Politica):
         for i in self.objetivos:
             if tuple(i) in obs:
                 obj.append(tuple(i))
-        if agente.mochila > 0:
+        if agente.pegos > 0:
             for j in self.ninhos:
                 if tuple(j) in obs:
                     obj.append(tuple(j))
+        print(obj)
         if obj:
             alvo = min(
                 obj,
