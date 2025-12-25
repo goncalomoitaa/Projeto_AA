@@ -3,10 +3,9 @@ import random
 from agentes.AccaoMover import AccaoMover
 from politicas.Politica import Politica
 
-
 class PoliticaNoveltySearch(Politica):
 
-    def __init__(self, genotipo=None, num_passos = 0):
+    def __init__(self, genotipo = None, num_passos = 0):
         super().__init__()
         self.lista_accoes = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         self.num_passos = num_passos
@@ -19,12 +18,11 @@ class PoliticaNoveltySearch(Politica):
         self.caminho = [] #guarda o caminho percorrido nessa geração
         #variáveis que criamos para ver a evolução entre gerações
         self.fitness_objetivo = 0.0
-        self.objetivo = 0
         self.novelty_score = 0.0
-        #Todo definimos as métricas todas mesmo as que façam parte só de um ambiente?
+        self.objetivo = 0
         self.passo_atual = 0
         self.items_recolhidos = 0
-        self.score_recursos = 0 #mudar
+        self.score_recursos = 0
 
     def reset(self): #única coisa que não da reset é o genótipo, ou seja, se o caminho for bom guarda ele e já nasce a saber
         self.comportamento = set()
@@ -43,7 +41,7 @@ class PoliticaNoveltySearch(Politica):
                 self.passo_atual += 1
                 return AccaoMover(direcao)
             self.passo_atual += 1
-            return AccaoMover((0,0)) #falta por +=1?
+            return AccaoMover((0,0))
 
     def mutar(self, taxa_mutacao): #altera os genes com base na taxa, levando a zonas inexploradas
         for i in range(len(self.genotipo)):
@@ -72,7 +70,7 @@ class PoliticaNoveltySearch(Politica):
 
     @staticmethod
     def crossover(parent1, parent2):#combina genótipo de dois pais para criar os filhos
-        #min entre o p1 e p2?
+        # point = min(len(parent1.genotipo), len(parent2.genotipo)) // 2
         point = random.randint(1, len(parent1.genotipo) - 1)
         filho1_geno = parent1.genotipo[:point] + parent2.genotipo[point:]
         filho2_geno = parent2.genotipo[:point] + parent1.genotipo[point:]

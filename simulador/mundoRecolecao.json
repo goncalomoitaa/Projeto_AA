@@ -5,14 +5,14 @@
   "sizeY": 5,
   "passos": 20,
   "agentes": [
-    {"nome_agente": "A", "pos_agente": [0, 0]}
+    { "nome_agente": "A", "pos_agente": [0, 0] }
   ],
   "obstaculos": [
     [1, 0]
   ],
   "ninhos": [
-    [4,4],
-    [0,2]
+    [4, 4],
+    [0, 2]
   ],
   "recursos": [
     { "recurso": "R1", "valor": 1, "pos": [2, 0] },

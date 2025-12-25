@@ -45,20 +45,20 @@ class AmbienteRecolecao(Ambiente):
             agente.y = y
             dist_depois = self.calcular_distancia_minima(agente)
             if dist_depois < dist_antes:
-                agente.avaliacaoEstadoAtual(0.5)
+                agente.avaliacaoEstadoAtual(0.5) #aproximou-se do objetivo
             else:
                 agente.avaliacaoEstadoAtual(-2.0)
             return
         if isinstance(accao, AccaoRecolher):
-            recurso_alvo = None
+            recurso_recolhido = None
             for rec in self.recursos:
                 if [agente.x, agente.y] == rec["pos"]:
                     self.objetivos.remove(agente.get_pos())
-                    recurso_alvo = rec
+                    recurso_recolhido = rec
                     break
-            if recurso_alvo:
-                self.recursos.remove(recurso_alvo)
-                agente.mochila += recurso_alvo["valor"]
+            if recurso_recolhido:
+                self.recursos.remove(recurso_recolhido)
+                agente.mochila += recurso_recolhido["valor"]
                 agente.politica.items_recolhidos += 1
                 agente.avaliacaoEstadoAtual(50)
             else:
@@ -66,23 +66,21 @@ class AmbienteRecolecao(Ambiente):
             return
         if isinstance(accao, AccaoDepositar):
             pos_atual = [agente.x, agente.y]
-            ninho_encontrado = False
+            ninho = False
             for n in self.ninhos:
                 if list(n) == list(pos_atual):
-                    ninho_encontrado = True
+                    ninho = True
                     break
-            if ninho_encontrado:
+            if ninho:
                 self.pontos += agente.mochila
                 agente.mochila = 0
                 agente.politica.items_recolhidos += 1
                 agente.avaliacaoEstadoAtual(100)
-                for i, n in enumerate(self.ninhos):
-                    if list(n) == list(pos_atual):
-                        del self.ninhos[i]
-                        break
-                if len(self.ninhos) == 0:
+                if tuple(pos_atual) in self.ninhos:
+                    self.ninhos.remove(tuple(pos_atual))
+                if len(self.ninhos) == 0: #se não houver mais ninhos acaba
                     agente.politica.acabou = True
-                elif len(self.recursos) == 0 and agente.mochila == 0:
+                elif len(self.recursos) == 0 and agente.mochila == 0: #se não houver mais recursos e não tiver nada na mochila acaba
                     agente.politica.acabou = True
             else:
                 agente.avaliacaoEstadoAtual(-5)
