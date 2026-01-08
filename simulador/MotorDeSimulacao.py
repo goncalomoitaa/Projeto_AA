@@ -109,35 +109,46 @@ class MotorDeSimulacao:
         print("INÍCIO DA SIMULAÇÃO")
         for _ in range(self.NUMERO_EXECUCOES):
             self.reset_ambiente()
+            if hasattr(self.politica, 'acabou'): self.politica.acabou = False
             if self.agentes:
+                for ag in self.agentes:
+                    ag.setPolitica(self.politica)
                 for _ in range(self.passos):
+                    if self.politica.acabou:
+                        break
                     for ag in self.agentes:
-                        if self.politica.acabou:
-                            self.ambiente.drawingWorld()
-                            time.sleep(1)
-                            sucessos += 1
-                            break
                         self.ambiente.observacaoPara(ag)
                         accao = ag.age()
                         self.ambiente.agir(accao, ag)
-                        self.ambiente.drawingWorld()
-                        time.sleep(1)
-                        ag.setPolitica(self.politica)
+                        # self.ambiente.drawingWorld()
+                        # time.sleep(1)
+            if self.politica.acabou:
+                sucessos += 1
             historico_passos.append(self.politica.passo_atual)
         media_passos = sum(historico_passos) / len(historico_passos)
         taxa_sucesso = (sucessos / self.NUMERO_EXECUCOES) * 100
         print(f"FIM DA SIMULAÇÃO.")
         print(f"Média de Passos: {media_passos:.2f}")
         print(f"Taxa de sucesso: {taxa_sucesso:.2f}%")
+        #Grafico passos
         plt.figure(figsize=(10, 6))
         plt.plot(historico_passos, marker='o', linestyle='-', color='blue', alpha=0.6, label='Passos por Tentativa')
-        plt.axhline(y=media_passos, color='red', linestyle='--', linewidth=2, label=f'Média ({media_passos:.1f})')
-        plt.title("Desempenho da Política Aleatória/Heurística")
-        plt.xlabel(f"Número da Execução (1-{self.NUMERO_EXECUCOES})")
+        plt.title("Desempenho da Política NoveltySearch")
         plt.ylabel("Número de Passos Gastos")
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.show()
+        #Grafico taxa de sucesso
+        plt.figure(figsize=(6, 6))
+        plt.bar(['Taxa de Sucesso'], [taxa_sucesso], color='blue', edgecolor='black', width=0.4)
+        plt.ylim(0, 105)  # Escala de 0 a 100%
+        plt.ylabel('Percentagem (%)')
+        plt.title('Eficácia do Agente (Sucesso)')
+        plt.grid(axis='y', linestyle='--', alpha=0.5)
+        plt.text(0, taxa_sucesso + 1, f"{taxa_sucesso:.1f}%",
+                 ha='center', va='bottom', fontweight='bold', fontsize=12)
+        plt.show()
+
 
     def executaEvolutivo(self):
         TAMANHO_POPULACAO = 160
@@ -148,6 +159,9 @@ class MotorDeSimulacao:
         TAMANHO_TORNEIO = 5
         N_ARQUIVOS = 3
 
+        sucessos = 0
+        historico_passos = []
+        historico_recompensas = []
         arquivo_novidade = []
         classe = type(self.politica)
         self.politica.num_passos = self.passos
@@ -183,13 +197,17 @@ class MotorDeSimulacao:
                     fitness_total += individuo.fitness_objetivo
             populacao.sort(key = lambda x : x.fitness_objetivo, reverse = True)
             melhor_da_gen = populacao[0]
+            if melhor_da_gen.acabou:
+                sucessos += 1
             if melhor_da_gen.items_recolhidos > melhor_items_global:
                 melhor_fitness_global = melhor_da_gen.fitness_objetivo
                 melhor_caminho_global = copy.deepcopy(melhor_da_gen)
             media_fitness = fitness_total / TAMANHO_POPULACAO
             media_fitness_por_gen.append(media_fitness)
             melhor_caminho_por_gen.append(melhor_da_gen.caminho)
-            print(f"Gen {gen + 1}: Média de fitness: {media_fitness:.2f} " f"(Itens_melhor_da_gen: {melhor_da_gen.items_recolhidos}, Nov_melhor_da_gen: {melhor_da_gen.novelty_score:.4f}) " f"Passos_melhor_da_gen: {melhor_da_gen.passo_atual}")
+            historico_passos.append(melhor_da_gen.passo_atual)
+            historico_recompensas.append(melhor_da_gen.objetivo)
+            print(f"Gen {gen + 1}: Média de fitness: {media_fitness:.2f} " f"(Itens_melhor_da_gen: {melhor_da_gen.items_recolhidos}, Nov_melhor_da_gen: {melhor_da_gen.novelty_score:.4f}) " f"Passos_melhor_da_gen: {melhor_da_gen.passo_atual} " f"recompensa: {melhor_da_gen.objetivo}")
             populacao.sort(key = lambda x : x.fitness_objetivo, reverse = True)
             for i in range(N_ARQUIVOS):
                 arquivo_novidade.append(populacao[i].comportamento)
@@ -207,29 +225,50 @@ class MotorDeSimulacao:
                     nova_populacao.append(child2)
             populacao = nova_populacao
         print("EVOLUÇÃO COMPLETA")
-        if melhor_caminho_global:
-            print(f"\n>>> A MOSTRAR REPLAY DO CAMPEÃO (Fitness: {melhor_fitness_global:.2f}) <<<")
-            self.reset_ambiente()
-            agente_final = self.agentes[0]
-            agente_final.setPolitica(melhor_caminho_global)
-            melhor_caminho_global.acabou = False
-            melhor_caminho_global.passo_atual = 0
-            melhor_caminho_global.items_recolhidos = 0
-            if hasattr(melhor_caminho_global, 'tem_carga'): melhor_caminho_global.tem_carga = False
-            for _ in range(self.passos):
-                if melhor_caminho_global.acabou:
-                    break
-                self.ambiente.observacaoPara(agente_final)
-                accao = agente_final.age()
-                self.ambiente.agir(accao, agente_final)
-                self.ambiente.drawingWorld()
-                time.sleep(0.5)
-        plt.figure(figsize=(10, 5))
-        plt.plot(media_fitness_por_gen, marker='o')
-        plt.title("Média de Fitness por Geração")
+        # if melhor_caminho_global:
+        #     print(f"\n>>> A MOSTRAR REPLAY DO CAMPEÃO (Fitness: {melhor_fitness_global:.2f}) <<<")
+        #     self.reset_ambiente()
+        #     agente_final = self.agentes[0]
+        #     agente_final.setPolitica(melhor_caminho_global)
+        #     melhor_caminho_global.acabou = False
+        #     melhor_caminho_global.passo_atual = 0
+        #     melhor_caminho_global.items_recolhidos = 0
+        #     if hasattr(melhor_caminho_global, 'tem_carga'): melhor_caminho_global.tem_carga = False
+        #     for _ in range(self.passos):
+        #         if melhor_caminho_global.acabou:
+        #             break
+        #         self.ambiente.observacaoPara(agente_final)
+        #         accao = agente_final.age()
+        #         self.ambiente.agir(accao, agente_final)
+        #         self.ambiente.drawingWorld()
+        #         time.sleep(0.5)
+
+        #Grafico passos
+        plt.figure(figsize=(10, 6))
+        plt.plot(historico_passos, marker='o', linestyle='-', color='blue', alpha=0.6, label='Passos por Tentativa')
+        plt.title("Desempenho da Política NoveltySearch")
+        plt.ylabel("Número de Passos Gastos")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.show()
+        #Grafico taxa de sucesso
+        taxa_sucesso = (sucessos / self.NUMERO_EXECUCOES) * 100
+        plt.figure(figsize=(6, 6))
+        plt.bar(['Taxa de Sucesso'], [taxa_sucesso], color='blue', edgecolor='black', width=0.4)
+        plt.ylim(0, 105)  # Escala de 0 a 100%
+        plt.ylabel('Percentagem (%)')
+        plt.title('Eficácia do Agente (Sucesso)')
+        plt.grid(axis='y', linestyle='--', alpha=0.5)
+        plt.text(0, taxa_sucesso + 1, f"{taxa_sucesso:.1f}%",
+                 ha='center', va='bottom', fontweight='bold', fontsize=12)
+        plt.show()
+        #Grafico recompensa
+        plt.figure(figsize=(10, 6))
+        plt.plot(historico_recompensas, color='blue', marker='o')
+        plt.title("Recompensa por tentativa")  # Corrigido de set_title para title
+        plt.ylabel("Recompensa")
         plt.xlabel("Geração")
-        plt.ylabel("Fitness Médio")
-        plt.grid(True)
+        plt.grid(True, alpha=0.3)
         plt.show()
 
     def executaAprendizagemReforco(self):
@@ -237,6 +276,8 @@ class MotorDeSimulacao:
         politica_global = PoliticaQLearning()
         historico_passos = []
         historico_items = []
+        historico_recompensas = []
+        sucessos = 0
         print("INÍCIO DA SIMULAÇÃO")
         for episodio in range(self.NUMERO_EXECUCOES):
             self.reset_ambiente()
@@ -244,6 +285,8 @@ class MotorDeSimulacao:
                 break
             agente = self.agentes[0]
             agente.setPolitica(politica_global)
+            if hasattr(politica_global, 'acabou'): politica_global.acabou = False
+            politica_global.objetivo = 0
             passos_realizados = 0
             for passo in range(self.passos):
                 self.ambiente.observacaoPara(agente)
@@ -252,29 +295,46 @@ class MotorDeSimulacao:
                 passos_realizados += 1
                 if hasattr(politica_global, "acabou") and politica_global.acabou:
                     break
+            if hasattr(politica_global, "acabou") and politica_global.acabou:
+                sucessos += 1
             items_total = politica_global.items_recolhidos
+            historico_recompensas.append(agente.politica.objetivo)
             historico_passos.append(passos_realizados)
             historico_items.append(items_total)
             if episodio % LOG_FREQ == 0:
                 print(f"Episódio {episodio} | Epsilon: {politica_global.epsilon:.3f} | "
-                      f"Passos: {passos_realizados} | Items (Apanhar+Depositar): {items_total}")
+                      f"Passos: {passos_realizados} | Items (Apanhar+Depositar): {items_total}"f"recompensa: {agente.politica.objetivo}")
             politica_global.fim_episodio()
         print(f"FIM DA SIMULAÇÃO.")
         print(f"Média Final de Passos: {sum(historico_passos[-10:]) / 10:.2f}")
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
-        ax1.plot(historico_passos, color='blue', alpha=0.6, label='Passos')
-        ax1.set_title("Eficiência (Passos para Concluir)")
-        ax1.set_ylabel("Passos")
-        ax1.grid(True, alpha=0.3)
-        ax2.plot(historico_items, color='green', alpha=0.6, label='Items (Ações de Sucesso)')
-        ax2.set_title("Eficácia (Soma de Recolhas e Depósitos)")
-        ax2.set_xlabel("Episódios")
-        ax2.set_ylabel("Total Ações")
-        ax2.set_ylim(0, 5)
-        ax2.grid(True, alpha=0.3)
-        plt.tight_layout()
+        #Grafico passos
+        plt.figure(figsize=(10, 6))
+        plt.plot(historico_passos, marker='o', linestyle='-', color='blue', alpha=0.6, label='Passos por Tentativa')
+        plt.title("Desempenho da Política QLearning")
+        plt.ylabel("Número de Passos Gastos")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.show()
+        #Grafico Taxa de sucesso
+        taxa_sucesso = (sucessos / self.NUMERO_EXECUCOES) * 100
+        plt.figure(figsize=(6, 6))
+        plt.bar(['Taxa de Sucesso'], [taxa_sucesso], color='blue', edgecolor='black', width=0.4)
+        plt.ylim(0, 105)  # Escala de 0 a 100%
+        plt.ylabel('Percentagem (%)')
+        plt.title('Eficácia do Agente (Sucesso)')
+        plt.grid(axis='y', linestyle='--', alpha=0.5)
+        plt.text(0, taxa_sucesso + 1, f"{taxa_sucesso:.1f}%",
+                 ha='center', va='bottom', fontweight='bold', fontsize=12)
+        plt.show()
+        # Grafico recompensa
+        plt.figure(figsize=(10, 6))
+        plt.plot(historico_recompensas, color='blue', marker='o')
+        plt.title("Recompensa por tentativa")  # Corrigido de set_title para title
+        plt.ylabel("Recompensa")
+        plt.xlabel("Tentativa")
+        plt.grid(True, alpha=0.3)
         plt.show()
 
 if __name__ == "__main__":
-    sim = MotorDeSimulacao([], None).cria("mundoRecolecao.json")
+    sim = MotorDeSimulacao([], None).cria("mundoFarol.json")
     sim.executa()

@@ -20,6 +20,7 @@ class PoliticaQLearning(Politica):
         self.items_recolhidos = 0
         self.passo_atual = 0
         self.acabou = False
+        self.objetivo = 0
 
     def pegar_estado(self, state):
         if state not in self.q_table:

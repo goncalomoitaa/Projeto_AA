@@ -31,6 +31,7 @@ class Agente(ABC):
     def avaliacaoEstadoAtual(self, recompensa): #recompensas
         if hasattr(self.politica, 'aprender'): #se tiver o met aprender do QLearning faz isso
             self.politica.aprender(self, recompensa)
+            self.politica.objetivo += recompensa
         else:
             self.politica.objetivo += recompensa
 
