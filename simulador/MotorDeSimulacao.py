@@ -88,11 +88,11 @@ class MotorDeSimulacao:
             self.ambiente.agentes.append(agente)
 
     def executaAleatorio(self):
-        historico_passos, historico_colisoes, sucessos = [], [], 0
+        historico_passos, historico_colisoes, historico_recompensas, sucessos = [], [], [], 0
         for _ in range(self.NUMERO_EXECUCOES):
             self.reset_ambiente()
-            # RESET DO PASSO PARA NÃO ACUMULAR NO GRÁFICO
             self.politica.passo_atual = 0
+            self.politica.objetivo = 0  # Reset da recompensa acumulada
             self.politica.acabou = False
             agente = self.agentes[0]
             agente.setPolitica(self.politica)
@@ -106,13 +106,14 @@ class MotorDeSimulacao:
             if self.politica.acabou: sucessos += 1
             historico_passos.append(self.politica.passo_atual)
             historico_colisoes.append(getattr(agente, 'colisoes', 0))
+            historico_recompensas.append(getattr(self.politica, 'objetivo', 0))
 
         return {"passos": historico_passos, "colisoes": historico_colisoes,
-                "sucesso": (sucessos / self.NUMERO_EXECUCOES) * 100}
+                "recompensa": historico_recompensas, "sucesso": (sucessos / self.NUMERO_EXECUCOES) * 100}
 
     def executaEvolutivo(self):
         TAMANHO_POPULACAO = 160
-        historico_passos, historico_colisoes, sucessos = [], [], 0
+        historico_passos, historico_colisoes, historico_recompensas, sucessos = [], [], [], 0
         arquivo_novidade = []
         classe = type(self.politica)
         populacao = [classe(num_passos=self.passos) for _ in range(TAMANHO_POPULACAO)]
@@ -139,29 +140,31 @@ class MotorDeSimulacao:
             if melhor.acabou: sucessos += 1
             historico_passos.append(melhor.passo_atual)
             historico_colisoes.append(melhor.colisoes)
+            historico_recompensas.append(melhor.objetivo)
 
             arquivo_novidade.extend([p.comportamento for p in populacao[:3]])
             nova_populacao = populacao[:TAMANHO_POPULACAO // 10]
             while len(nova_populacao) < TAMANHO_POPULACAO:
                 p1, p2 = self.politica.seleciona_pais(populacao, 5), self.politica.seleciona_pais(populacao, 5)
                 child1, child2 = PoliticaNoveltySearch.crossover(p1, p2)
-                child1.mutar(0.01);
+                child1.mutar(0.01)
                 child2.mutar(0.01)
                 nova_populacao.extend([child1, child2])
             populacao = nova_populacao[:TAMANHO_POPULACAO]
 
         return {"passos": historico_passos, "colisoes": historico_colisoes,
-                "sucesso": (sucessos / self.NUMERO_EXECUCOES) * 100}
+                "recompensa": historico_recompensas, "sucesso": (sucessos / self.NUMERO_EXECUCOES) * 100}
 
     def executaAprendizagemReforco(self):
         politica_global = PoliticaQLearning()
-        historico_passos, historico_colisoes, sucessos = [], [], 0
+        historico_passos, historico_colisoes, historico_recompensas, sucessos = [], [], [], 0
         for episodio in range(self.NUMERO_EXECUCOES):
             self.reset_ambiente()
             agente = self.agentes[0]
             agente.setPolitica(politica_global)
             agente.colisoes = 0
-            politica_global.passo_atual = 0  # RESET DO PASSO
+            politica_global.passo_atual = 0
+            politica_global.objetivo = 0  # Reset da recompensa acumulada
             politica_global.acabou = False
 
             for _ in range(self.passos):
@@ -172,54 +175,61 @@ class MotorDeSimulacao:
             if getattr(politica_global, "acabou", False): sucessos += 1
             historico_passos.append(politica_global.passo_atual)
             historico_colisoes.append(agente.colisoes)
+            historico_recompensas.append(politica_global.objetivo)
             politica_global.fim_episodio()
 
         return {"passos": historico_passos, "colisoes": historico_colisoes,
-                "sucesso": (sucessos / self.NUMERO_EXECUCOES) * 100}
+                "recompensa": historico_recompensas, "sucesso": (sucessos / self.NUMERO_EXECUCOES) * 100}
 
     def gerar_graficos_comparativos(self, resultados):
         cores = {"PoliticaAleatoria": "blue", "PoliticaNoveltySearch": "green", "PoliticaQLearning": "red"}
-        plt.figure(figsize=(18, 5))
 
-        # 1. Passos
-        plt.subplot(1, 3, 1)
+        # 1. Gráfico de Passos
+        plt.figure("Passos por Tentativa", figsize=(10, 6))
         for nome, data in resultados.items():
             plt.plot(data["passos"], label=nome, color=cores.get(nome, "black"))
-        plt.title("Passos por Tentativa (Max: {})".format(self.passos))
-        plt.xlabel("Execução/Geração");
+        plt.title("Métrica: Passos por Episódio (Eficiência)")
+        plt.xlabel("Execução/Geração")
         plt.ylabel("Passos")
-        plt.legend();
+        plt.legend()
         plt.grid(True, alpha=0.3)
 
-        # 2. Colisões
-        plt.subplot(1, 3, 2)
+        # 2. Gráfico de Colisões
+        plt.figure("Colisões por Tentativa", figsize=(10, 6))
         for nome, data in resultados.items():
             plt.plot(data["colisoes"], label=nome, color=cores.get(nome, "black"))
-        plt.title("Colisões por Tentativa")
-        plt.xlabel("Execução/Geração");
+        plt.title("Métrica: Colisões (Quantidade)")
+        plt.xlabel("Execução/Geração")
         plt.ylabel("Colisões")
-        plt.legend();
+        plt.legend()
         plt.grid(True, alpha=0.3)
 
-        # 3. Taxa de Sucesso
-        plt.subplot(1, 3, 3)
+        # 3. Gráfico de Recompensa Acumulada (NOVO)
+        plt.figure("Recompensa Acumulada", figsize=(10, 6))
+        for nome, data in resultados.items():
+            plt.plot(data["recompensa"], label=nome, color=cores.get(nome, "black"))
+        plt.title("Métrica: Recompensa Acumulada por Episódio")
+        plt.xlabel("Execução/Geração")
+        plt.ylabel("Score Total")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+
+        # 4. Gráfico de Taxa de Sucesso
+        plt.figure("Taxa de Sucesso", figsize=(8, 6))
         nomes = list(resultados.keys())
         taxas = [resultados[n]["sucesso"] for n in nomes]
         plt.bar(nomes, taxas, color=[cores.get(n) for n in nomes])
-        plt.title("Taxa de Sucesso (%)")
-        plt.ylim(0, 105)
+        plt.title("Métrica: Taxa de Sucesso (%)")
+        plt.ylim(0, 110)
         for i, v in enumerate(taxas):
             plt.text(i, v + 2, f"{v:.1f}%", ha='center', fontweight='bold')
+        plt.grid(axis='y', linestyle='--', alpha=0.5)
 
-        plt.tight_layout()
         plt.show()
 
 
 if __name__ == "__main__":
-    # Carregar motor e ficheiro
     motor = MotorDeSimulacao([], None).cria("mundoFarol.json")
-
-    # Executar as 3 políticas
     lista_politicas = ["PoliticaAleatoria", "PoliticaNoveltySearch", "PoliticaQLearning"]
     resultados_finais = {}
 
@@ -228,5 +238,4 @@ if __name__ == "__main__":
         motor.definePolitica(p_nome)
         resultados_finais[p_nome] = motor.executa()
 
-    # Gerar comparação final
     motor.gerar_graficos_comparativos(resultados_finais)
