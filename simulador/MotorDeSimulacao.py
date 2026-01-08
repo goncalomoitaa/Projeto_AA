@@ -1,11 +1,11 @@
 import copy
 import sys
-import time
-from typing import List
+import math
 import json
+from typing import List
 from matplotlib import pyplot as plt
 
-# Importação dos módulos do seu projeto
+# Importação dos módulos do projeto
 from agentes.Agente import Agente
 from agentes.AgenteRecolecao import AgenteRecolecao
 from agentes.SensorVisao import SensorVisao
@@ -19,7 +19,6 @@ from politicas.PoliticaQLearning import PoliticaQLearning
 
 
 class MotorDeSimulacao:
-
     def __init__(self, agentes: List[Agente], ambiente: Ambiente):
         self.agentes = agentes
         self.ambiente = ambiente
@@ -30,212 +29,215 @@ class MotorDeSimulacao:
 
     def definePolitica(self, nome_politica):
         if nome_politica == "PoliticaNoveltySearch":
-            self.politica = PoliticaNoveltySearch()
+            self.politica = PoliticaNoveltySearch(num_passos=self.passos)
         elif nome_politica == "PoliticaAleatoria":
             self.politica = PoliticaAleatoria()
-            if isinstance(self.ambiente, AmbienteRecolecao):
-                self.politica.ninhos = self.dados.get('ninhos')
+            if self.dados.get('ambiente') == "Ambiente Recolecao":
+                self.politica.ninhos = self.dados.get('ninhos', [])
         elif nome_politica == "PoliticaQLearning":
             self.politica = PoliticaQLearning()
 
-        self.politica.objetivos = self.ambiente.objetivos
-        self.politica.obstaculos = self.ambiente.obstaculos
+        self.politica.objetivos = getattr(self.ambiente, 'objetivos', [])
+        self.politica.obstaculos = getattr(self.ambiente, 'obstaculos', [])
 
-    def executa(self):
-        if isinstance(self.politica, PoliticaNoveltySearch):
-            return self.executaEvolutivo()
-        if isinstance(self.politica, PoliticaAleatoria):
-            return self.executaAleatorio()
-        if isinstance(self.politica, PoliticaQLearning):
-            return self.executaAprendizagemReforco()
-        return None
+    def reset_ambiente(self):
+        self.agentes = []
+        sizeX, sizeY = self.dados.get('sizeX'), self.dados.get('sizeY')
+        ambiente_str = self.dados.get('ambiente')
+        self.passos = self.dados.get('passos')
+
+        if ambiente_str == "Ambiente Farol":
+            self.ambiente = AmbienteFarol(sizeX, sizeY, self.dados.get('farol'))
+            tipo_agente = AgenteFarol
+        elif ambiente_str == "Ambiente Recolecao":
+            ninhos = [(pos[0], pos[1]) for pos in self.dados.get('ninhos')]
+            recursos = copy.deepcopy(self.dados.get('recursos'))
+            self.ambiente = AmbienteRecolecao(sizeX, sizeY, recursos, ninhos)
+            tipo_agente = AgenteRecolecao
+
+        if self.dados.get('obstaculos'):
+            self.ambiente.obstaculos = [(pos[0], pos[1]) for pos in self.dados.get('obstaculos')]
+
+        for ag_info in self.dados.get('agentes'):
+            agente = tipo_agente(ag_info['nome_agente'], ag_info['pos_agente'][0], ag_info['pos_agente'][1])
+            agente.instala(SensorVisao())
+            self.agentes.append(agente)
+            self.ambiente.agentes.append(agente)
+
+    def calcular_distancia_manhattan(self, agente):
+        if hasattr(self.ambiente, 'farol'):
+            fx, fy = self.ambiente.farol
+            return abs(agente.x - fx) + abs(agente.y - fy)
+        return 0
+
+    def executar_episodio(self, pol_instancia):
+        self.reset_ambiente()
+        agente = self.agentes[0]
+        agente.setPolitica(pol_instancia)
+
+        pol_instancia.passo_atual = 0
+        pol_instancia.objetivo = 0
+        pol_instancia.acabou = False
+        agente.colisoes = 0
+
+        recursos_recolhidos_total = 0
+        recursos_depositados_total = 0
+
+        for _ in range(self.passos):
+            if pol_instancia.acabou: break
+
+            mochila_antes = getattr(agente, 'mochila', 0)
+            self.ambiente.observacaoPara(agente)
+            self.ambiente.agir(agente.age(), agente)
+            mochila_depois = getattr(agente, 'mochila', 0)
+
+            if self.dados.get('ambiente') == "Ambiente Recolecao":
+                if mochila_depois > mochila_antes:
+                    recursos_recolhidos_total += (mochila_depois - mochila_antes)
+                elif mochila_depois < mochila_antes:
+                    recursos_depositados_total += (mochila_antes - mochila_depois)
+
+        if self.dados.get('ambiente') == "Ambiente Recolecao":
+            sucesso = 1 if (len(self.ambiente.recursos) == 0 and agente.mochila == 0) else 0
+        else:
+            sucesso = 1 if pol_instancia.acabou else 0
+
+        return {
+            "passos": pol_instancia.passo_atual,
+            "recompensa": pol_instancia.objetivo,
+            "sucesso": sucesso,
+            "colisoes": agente.colisoes,
+            "distancia": self.calcular_distancia_manhattan(agente),
+            "recolhidos": recursos_recolhidos_total,
+            "depositados": recursos_depositados_total,
+            "valor_total": getattr(self.ambiente, 'pontos', 0)
+        }
+
+    def avaliar_politica(self, nome_pol):
+        hist = {k: [] for k in ["passos", "recompensa", "sucesso", "colisoes", "distancia", "recolhidos", "depositados",
+                                "valor_total"]}
+
+        if nome_pol == "PoliticaNoveltySearch":
+            arquivo_novidade = []
+            populacao = [PoliticaNoveltySearch(num_passos=self.passos) for _ in range(160)]
+            for gen in range(self.NUMERO_EXECUCOES):
+                for ind in populacao:
+                    ind.reset()
+                    self.executar_episodio(ind)
+                    ind.fitness_objetivo = ind.calcular_fitness() + (
+                                ind.computar_novelty(ind.comportamento, arquivo_novidade, 5) * 4)
+
+                populacao.sort(key=lambda x: x.fitness_objetivo, reverse=True)
+                melhor = populacao[0]
+                ep = self.executar_episodio(melhor)
+                for k, v in zip(hist.keys(), ep.values()): hist[k].append(v)
+
+                arquivo_novidade.extend([p.comportamento for p in populacao[:3]])
+                nova = [copy.deepcopy(p) for p in populacao[:16]]
+                while len(nova) < 160:
+                    p1, p2 = PoliticaNoveltySearch.seleciona_pais(populacao, 5), PoliticaNoveltySearch.seleciona_pais(
+                        populacao, 5)
+                    c1, c2 = PoliticaNoveltySearch.crossover(p1, p2)
+                    c1.mutar(0.01);
+                    c2.mutar(0.01);
+                    nova.extend([c1, c2])
+                populacao = nova[:160]
+        else:
+            self.definePolitica(nome_pol)
+            for _ in range(self.NUMERO_EXECUCOES):
+                ep = self.executar_episodio(self.politica)
+                for k, v in zip(hist.keys(), ep.values()): hist[k].append(v)
+                if hasattr(self.politica, 'fim_episodio'): self.politica.fim_episodio()
+
+        return hist
+
+    def gerar_relatorio_visual(self, resultados_globais):
+        cores = {"PoliticaAleatoria": "blue", "PoliticaNoveltySearch": "green", "PoliticaQLearning": "red"}
+        grid_conf = {"linestyle": '--', "alpha": 0.3}
+
+        plt.figure("Métrica: Número de Passos", figsize=(8, 5))
+        for n, d in resultados_globais.items(): plt.plot(d["passos"], label=n, color=cores[n])
+        plt.title("Evolução: Passos por Episódio");
+        plt.ylabel("Passos");
+        plt.legend();
+        plt.grid(True, **grid_conf)
+
+        plt.figure("Métrica: Recompensa Acumulada", figsize=(8, 5))
+        for n, d in resultados_globais.items(): plt.plot(d["recompensa"], label=n, color=cores[n])
+        plt.title("Evolução: Recompensa Acumulada");
+        plt.ylabel("Score");
+        plt.legend();
+        plt.grid(True, **grid_conf)
+
+        plt.figure("Métrica: Taxa de Sucesso", figsize=(7, 5))
+        nomes = list(resultados_globais.keys())
+        taxas = [(sum(resultados_globais[n]["sucesso"]) / self.NUMERO_EXECUCOES) * 100 for n in nomes]
+        plt.bar(nomes, taxas, color=[cores[n] for n in nomes], edgecolor='black')
+        plt.title("Eficácia: Taxa de Sucesso (%)");
+        plt.ylim(0, 115)
+        for i, v in enumerate(taxas): plt.text(i, v + 2, f"{int(v)}%", ha='center', fontweight='bold')
+        plt.grid(True, axis='y', **grid_conf)
+
+        plt.figure("Métrica: Colisões", figsize=(8, 5))
+        for n, d in resultados_globais.items(): plt.plot(d["colisoes"], label=n, color=cores[n])
+        plt.title("Evolução: Número de Colisões");
+        plt.ylabel("Colisões");
+        plt.legend();
+        plt.grid(True, **grid_conf)
+
+        if self.dados.get('ambiente') == "Ambiente Recolecao":
+            plt.figure("Métrica: Recursos Recolhidos", figsize=(8, 5))
+            for n, d in resultados_globais.items(): plt.plot(d["recolhidos"], label=n, color=cores[n])
+            plt.title("Foraging: Recursos Recolhidos");
+            plt.ylabel("Quantidade");
+            plt.legend();
+            plt.grid(True, **grid_conf)
+
+            plt.figure("Métrica: Recursos Depositados", figsize=(8, 5))
+            for n, d in resultados_globais.items(): plt.plot(d["depositados"], label=n, color=cores[n])
+            plt.title("Foraging: Recursos Depositados");
+            plt.ylabel("Quantidade");
+            plt.legend();
+            plt.grid(True, **grid_conf)
+
+            plt.figure("Métrica: Valor Total Depositado", figsize=(8, 5))
+            for n, d in resultados_globais.items(): plt.plot(d["valor_total"], label=n, color=cores[n])
+            plt.title("Foraging: Valor Total Depositado");
+            plt.ylabel("Soma de Valores");
+            plt.legend();
+            plt.grid(True, **grid_conf)
+
+            plt.figure("Métrica: Eficiência Foraging", figsize=(8, 5))
+            for n, d in resultados_globais.items():
+                efic = [v / p if p > 0 else 0 for v, p in zip(d["valor_total"], d["passos"])]
+                plt.plot(efic, label=n, color=cores[n])
+            plt.title("Foraging: Eficiência (Valor/Passo)");
+            plt.ylabel("Rácio");
+            plt.legend();
+            plt.grid(True, **grid_conf)
+
+        if self.dados.get('ambiente') == "Ambiente Farol":
+            plt.figure("Métrica: Distância ao Farol", figsize=(8, 5))
+            for n, d in resultados_globais.items(): plt.plot(d["distancia"], label=n, color=cores[n])
+            plt.title("Navegação: Distância Final ao Alvo");
+            plt.ylabel("Distância");
+            plt.legend();
+            plt.grid(True, **grid_conf)
+
+        plt.show()
 
     def cria(self, nome_do_ficheiro_parametros: str):
         try:
             with open(nome_do_ficheiro_parametros, 'r', encoding="utf-8") as file:
                 self.dados = json.load(file)
                 self.reset_ambiente()
-        except Exception as e:
-            print(f"Erro ao ler o ficheiro JSON: {e}", file=sys.stderr)
+        except Exception:
+            pass
         return self
-
-    def reset_ambiente(self):
-        self.agentes = []
-        sizeX = self.dados.get('sizeX')
-        sizeY = self.dados.get('sizeY')
-        ambiente_str = self.dados.get('ambiente')
-        lista_agentes = self.dados.get('agentes')
-        obstaculos = self.dados.get('obstaculos')
-        self.passos = self.dados.get('passos')
-
-        if ambiente_str == "Ambiente Farol":
-            farol = self.dados.get('farol')
-            self.ambiente = AmbienteFarol(sizeX, sizeY, (farol[0], farol[1]))
-            tipo_agente = AgenteFarol
-        elif ambiente_str == "Ambiente Recolecao":
-            ninhos = [(pos[0], pos[1]) for pos in self.dados.get('ninhos')]
-            recursos_copia = copy.deepcopy(self.dados.get('recursos'))
-            self.ambiente = AmbienteRecolecao(sizeX, sizeY, recursos_copia, ninhos)
-            tipo_agente = AgenteRecolecao
-
-        if obstaculos:
-            self.ambiente.obstaculos = [(pos[0], pos[1]) for pos in obstaculos]
-
-        for ag in lista_agentes:
-            agente = tipo_agente(ag['nome_agente'], ag['pos_agente'][0], ag['pos_agente'][1])
-            agente.instala(SensorVisao())
-            self.agentes.append(agente)
-            self.ambiente.agentes.append(agente)
-
-    def executaAleatorio(self):
-        historico_passos, historico_colisoes, historico_recompensas, sucessos = [], [], [], 0
-        for _ in range(self.NUMERO_EXECUCOES):
-            self.reset_ambiente()
-            self.politica.passo_atual = 0
-            self.politica.objetivo = 0  # Reset da recompensa acumulada
-            self.politica.acabou = False
-            agente = self.agentes[0]
-            agente.setPolitica(self.politica)
-            agente.colisoes = 0
-
-            for _ in range(self.passos):
-                if self.politica.acabou: break
-                self.ambiente.observacaoPara(agente)
-                self.ambiente.agir(agente.age(), agente)
-
-            if self.politica.acabou: sucessos += 1
-            historico_passos.append(self.politica.passo_atual)
-            historico_colisoes.append(getattr(agente, 'colisoes', 0))
-            historico_recompensas.append(getattr(self.politica, 'objetivo', 0))
-
-        return {"passos": historico_passos, "colisoes": historico_colisoes,
-                "recompensa": historico_recompensas, "sucesso": (sucessos / self.NUMERO_EXECUCOES) * 100}
-
-    def executaEvolutivo(self):
-        TAMANHO_POPULACAO = 160
-        historico_passos, historico_colisoes, historico_recompensas, sucessos = [], [], [], 0
-        arquivo_novidade = []
-        classe = type(self.politica)
-        populacao = [classe(num_passos=self.passos) for _ in range(TAMANHO_POPULACAO)]
-
-        for gen in range(self.NUMERO_EXECUCOES):
-            for individuo in populacao:
-                individuo.reset()
-                self.reset_ambiente()
-                agente = self.agentes[0]
-                agente.setPolitica(individuo)
-                agente.colisoes = 0
-                for _ in range(self.passos):
-                    if individuo.acabou: break
-                    self.ambiente.observacaoPara(agente)
-                    self.ambiente.agir(agente.age(), agente)
-
-                individuo.colisoes = agente.colisoes
-                novelty = self.politica.computar_novelty(individuo.comportamento, arquivo_novidade, k=5)
-                individuo.novelty_score = novelty
-                individuo.fitness_objetivo = (individuo.calcular_fitness() * 1.0) + (novelty * 4)
-
-            populacao.sort(key=lambda x: x.fitness_objetivo, reverse=True)
-            melhor = populacao[0]
-            if melhor.acabou: sucessos += 1
-            historico_passos.append(melhor.passo_atual)
-            historico_colisoes.append(melhor.colisoes)
-            historico_recompensas.append(melhor.objetivo)
-
-            arquivo_novidade.extend([p.comportamento for p in populacao[:3]])
-            nova_populacao = populacao[:TAMANHO_POPULACAO // 10]
-            while len(nova_populacao) < TAMANHO_POPULACAO:
-                p1, p2 = self.politica.seleciona_pais(populacao, 5), self.politica.seleciona_pais(populacao, 5)
-                child1, child2 = PoliticaNoveltySearch.crossover(p1, p2)
-                child1.mutar(0.01)
-                child2.mutar(0.01)
-                nova_populacao.extend([child1, child2])
-            populacao = nova_populacao[:TAMANHO_POPULACAO]
-
-        return {"passos": historico_passos, "colisoes": historico_colisoes,
-                "recompensa": historico_recompensas, "sucesso": (sucessos / self.NUMERO_EXECUCOES) * 100}
-
-    def executaAprendizagemReforco(self):
-        politica_global = PoliticaQLearning()
-        historico_passos, historico_colisoes, historico_recompensas, sucessos = [], [], [], 0
-        for episodio in range(self.NUMERO_EXECUCOES):
-            self.reset_ambiente()
-            agente = self.agentes[0]
-            agente.setPolitica(politica_global)
-            agente.colisoes = 0
-            politica_global.passo_atual = 0
-            politica_global.objetivo = 0  # Reset da recompensa acumulada
-            politica_global.acabou = False
-
-            for _ in range(self.passos):
-                self.ambiente.observacaoPara(agente)
-                self.ambiente.agir(agente.age(), agente)
-                if getattr(politica_global, "acabou", False): break
-
-            if getattr(politica_global, "acabou", False): sucessos += 1
-            historico_passos.append(politica_global.passo_atual)
-            historico_colisoes.append(agente.colisoes)
-            historico_recompensas.append(politica_global.objetivo)
-            politica_global.fim_episodio()
-
-        return {"passos": historico_passos, "colisoes": historico_colisoes,
-                "recompensa": historico_recompensas, "sucesso": (sucessos / self.NUMERO_EXECUCOES) * 100}
-
-    def gerar_graficos_comparativos(self, resultados):
-        cores = {"PoliticaAleatoria": "blue", "PoliticaNoveltySearch": "green", "PoliticaQLearning": "red"}
-
-        # 1. Gráfico de Passos
-        plt.figure("Passos por Tentativa", figsize=(10, 6))
-        for nome, data in resultados.items():
-            plt.plot(data["passos"], label=nome, color=cores.get(nome, "black"))
-        plt.title("Métrica: Passos por Episódio (Eficiência)")
-        plt.xlabel("Execução/Geração")
-        plt.ylabel("Passos")
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-
-        # 2. Gráfico de Colisões
-        plt.figure("Colisões por Tentativa", figsize=(10, 6))
-        for nome, data in resultados.items():
-            plt.plot(data["colisoes"], label=nome, color=cores.get(nome, "black"))
-        plt.title("Métrica: Colisões (Quantidade)")
-        plt.xlabel("Execução/Geração")
-        plt.ylabel("Colisões")
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-
-        # 3. Gráfico de Recompensa Acumulada (NOVO)
-        plt.figure("Recompensa Acumulada", figsize=(10, 6))
-        for nome, data in resultados.items():
-            plt.plot(data["recompensa"], label=nome, color=cores.get(nome, "black"))
-        plt.title("Métrica: Recompensa Acumulada por Episódio")
-        plt.xlabel("Execução/Geração")
-        plt.ylabel("Score Total")
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-
-        # 4. Gráfico de Taxa de Sucesso
-        plt.figure("Taxa de Sucesso", figsize=(8, 6))
-        nomes = list(resultados.keys())
-        taxas = [resultados[n]["sucesso"] for n in nomes]
-        plt.bar(nomes, taxas, color=[cores.get(n) for n in nomes])
-        plt.title("Métrica: Taxa de Sucesso (%)")
-        plt.ylim(0, 110)
-        for i, v in enumerate(taxas):
-            plt.text(i, v + 2, f"{v:.1f}%", ha='center', fontweight='bold')
-        plt.grid(axis='y', linestyle='--', alpha=0.5)
-
-        plt.show()
 
 
 if __name__ == "__main__":
-    motor = MotorDeSimulacao([], None).cria("mundoFarol.json")
-    lista_politicas = ["PoliticaAleatoria", "PoliticaNoveltySearch", "PoliticaQLearning"]
-    resultados_finais = {}
-
-    for p_nome in lista_politicas:
-        print(f"A executar: {p_nome}...")
-        motor.definePolitica(p_nome)
-        resultados_finais[p_nome] = motor.executa()
-
-    motor.gerar_graficos_comparativos(resultados_finais)
+    motor = MotorDeSimulacao([], None).cria("mundoRecolecao.json")
+    politicas = ["PoliticaAleatoria", "PoliticaNoveltySearch", "PoliticaQLearning"]
+    res_finais = {p: motor.avaliar_politica(p) for p in politicas}
+    motor.gerar_relatorio_visual(res_finais)
