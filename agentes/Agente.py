@@ -12,6 +12,7 @@ class Agente(ABC):
         self.observacaoCurrente = None
         self.politica = None
         self.pegos = 0
+        self.colisoes = 0
 
     def observacao(self, obs: Observacao):
         self.observacaoCurrente = obs

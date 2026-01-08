@@ -26,13 +26,16 @@ class AmbienteFarol(Ambiente):
                     agente.politica.acabou = True
                     return
                 if (x, y) in self.obstaculos:
+                    agente.colisoes += 1
                     agente.avaliacaoEstadoAtual(-1)
                     return
                 for outro_agente in self.agentes:
                     if outro_agente != agente and (x, y) == (outro_agente.x, outro_agente.y):
+                        agente.colisoes += 1
                         agente.avaliacaoEstadoAtual(-1)
                         return
                 if x < 0 or x >= self.sizeX or y < 0 or y >= self.sizeY:
+                    agente.colisoes += 1
                     agente.avaliacaoEstadoAtual(-1)
                     return
                 else:

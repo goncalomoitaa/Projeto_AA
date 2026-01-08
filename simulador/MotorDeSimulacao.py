@@ -105,7 +105,9 @@ class MotorDeSimulacao:
 
     def executaAleatorio(self):
         historico_passos = []
+        historico_colisoes = []
         sucessos = 0
+        colisoes = 0
         print("INÍCIO DA SIMULAÇÃO")
         for _ in range(self.NUMERO_EXECUCOES):
             self.reset_ambiente()
@@ -113,6 +115,8 @@ class MotorDeSimulacao:
             if self.agentes:
                 for ag in self.agentes:
                     ag.setPolitica(self.politica)
+                    if hasattr(ag, 'colisoes'):
+                        ag.colisoes = 0
                 for _ in range(self.passos):
                     if self.politica.acabou:
                         break
@@ -122,9 +126,12 @@ class MotorDeSimulacao:
                         self.ambiente.agir(accao, ag)
                         # self.ambiente.drawingWorld()
                         # time.sleep(1)
+                if len(self.agentes) > 0:
+                    colisoes = getattr(self.agentes[0], 'colisoes', 0)
             if self.politica.acabou:
                 sucessos += 1
             historico_passos.append(self.politica.passo_atual)
+            historico_colisoes.append(colisoes)
         media_passos = sum(historico_passos) / len(historico_passos)
         taxa_sucesso = (sucessos / self.NUMERO_EXECUCOES) * 100
         print(f"FIM DA SIMULAÇÃO.")
@@ -133,8 +140,9 @@ class MotorDeSimulacao:
         #Grafico passos
         plt.figure(figsize=(10, 6))
         plt.plot(historico_passos, marker='o', linestyle='-', color='blue', alpha=0.6, label='Passos por Tentativa')
-        plt.title("Desempenho da Política NoveltySearch")
+        plt.title("Desempenho da Política Aleatoria")
         plt.ylabel("Número de Passos Gastos")
+        plt.xlabel("Tentativas")
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.show()
@@ -143,10 +151,19 @@ class MotorDeSimulacao:
         plt.bar(['Taxa de Sucesso'], [taxa_sucesso], color='blue', edgecolor='black', width=0.4)
         plt.ylim(0, 105)  # Escala de 0 a 100%
         plt.ylabel('Percentagem (%)')
-        plt.title('Eficácia do Agente (Sucesso)')
+        plt.title("Desempenho da Política Aleatoria")
         plt.grid(axis='y', linestyle='--', alpha=0.5)
         plt.text(0, taxa_sucesso + 1, f"{taxa_sucesso:.1f}%",
                  ha='center', va='bottom', fontweight='bold', fontsize=12)
+        plt.show()
+        # Grafico colisoes
+        plt.figure(figsize=(10, 6))
+        plt.plot(historico_colisoes, color='blue', marker='o')
+        plt.title("Colisões por tentativa")  # Corrigido de set_title para title
+        plt.title("Desempenho da Política Aleatoria")
+        plt.ylabel("Número de Colisões")
+        plt.xlabel("Tentativas")
+        plt.grid(True, alpha=0.3)
         plt.show()
 
 
@@ -158,10 +175,10 @@ class MotorDeSimulacao:
         PESO_OBJETIVO = 1.0
         TAMANHO_TORNEIO = 5
         N_ARQUIVOS = 3
-
         sucessos = 0
         historico_passos = []
         historico_recompensas = []
+        historico_colisoes = []
         arquivo_novidade = []
         classe = type(self.politica)
         self.politica.num_passos = self.passos
@@ -180,6 +197,8 @@ class MotorDeSimulacao:
                 if len(self.agentes) > 0:
                     agente = self.agentes[0]
                     agente.setPolitica(individuo)
+                    if hasattr(agente, 'colisoes'):
+                        agente.colisoes = 0
                     for _ in range(self.passos):
                         if individuo.acabou:
                             break
@@ -188,6 +207,8 @@ class MotorDeSimulacao:
                         self.ambiente.agir(accao, agente)
                         # self.ambiente.drawingWorld()
                         # time.sleep(1.0)
+                    colisoes_ag = agente.colisoes
+                    individuo.colisoes = colisoes_ag
                     # novelty
                     novelty = self.politica.computar_novelty(individuo.comportamento, arquivo_novidade, k = 5)
                     individuo.novelty_score = novelty
@@ -207,7 +228,8 @@ class MotorDeSimulacao:
             melhor_caminho_por_gen.append(melhor_da_gen.caminho)
             historico_passos.append(melhor_da_gen.passo_atual)
             historico_recompensas.append(melhor_da_gen.objetivo)
-            print(f"Gen {gen + 1}: Média de fitness: {media_fitness:.2f} " f"(Itens_melhor_da_gen: {melhor_da_gen.items_recolhidos}, Nov_melhor_da_gen: {melhor_da_gen.novelty_score:.4f}) " f"Passos_melhor_da_gen: {melhor_da_gen.passo_atual} " f"recompensa: {melhor_da_gen.objetivo}")
+            historico_colisoes.append(melhor_da_gen.colisoes)
+            print(f"Gen {gen + 1}: Média de fitness: {media_fitness:.2f} " f"(Itens_melhor_da_gen: {melhor_da_gen.items_recolhidos}, Nov_melhor_da_gen: {melhor_da_gen.novelty_score:.4f}) " f"Passos_melhor_da_gen: {melhor_da_gen.passo_atual} " f"recompensa: {melhor_da_gen.objetivo} " f"colisoes: {melhor_da_gen.colisoes}")
             populacao.sort(key = lambda x : x.fitness_objetivo, reverse = True)
             for i in range(N_ARQUIVOS):
                 arquivo_novidade.append(populacao[i].comportamento)
@@ -248,6 +270,7 @@ class MotorDeSimulacao:
         plt.plot(historico_passos, marker='o', linestyle='-', color='blue', alpha=0.6, label='Passos por Tentativa')
         plt.title("Desempenho da Política NoveltySearch")
         plt.ylabel("Número de Passos Gastos")
+        plt.xlabel("Geração")
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.show()
@@ -257,7 +280,7 @@ class MotorDeSimulacao:
         plt.bar(['Taxa de Sucesso'], [taxa_sucesso], color='blue', edgecolor='black', width=0.4)
         plt.ylim(0, 105)  # Escala de 0 a 100%
         plt.ylabel('Percentagem (%)')
-        plt.title('Eficácia do Agente (Sucesso)')
+        plt.title("Desempenho da Política NoveltySearch")
         plt.grid(axis='y', linestyle='--', alpha=0.5)
         plt.text(0, taxa_sucesso + 1, f"{taxa_sucesso:.1f}%",
                  ha='center', va='bottom', fontweight='bold', fontsize=12)
@@ -265,9 +288,18 @@ class MotorDeSimulacao:
         #Grafico recompensa
         plt.figure(figsize=(10, 6))
         plt.plot(historico_recompensas, color='blue', marker='o')
-        plt.title("Recompensa por tentativa")  # Corrigido de set_title para title
+        plt.title("Desempenho da Política NoveltySearch")
         plt.ylabel("Recompensa")
         plt.xlabel("Geração")
+        plt.grid(True, alpha=0.3)
+        plt.show()
+        # Grafico colisoes
+        plt.figure(figsize=(10, 6))
+        plt.plot(historico_colisoes, color='blue', marker='o')
+        plt.title("Colisões por tentativa")  # Corrigido de set_title para title
+        plt.title("Desempenho da Política NoveltySearch")
+        plt.ylabel("Número de Colisões")
+        plt.xlabel("Tentativas")
         plt.grid(True, alpha=0.3)
         plt.show()
 
@@ -277,6 +309,7 @@ class MotorDeSimulacao:
         historico_passos = []
         historico_items = []
         historico_recompensas = []
+        historico_colisoes = []
         sucessos = 0
         print("INÍCIO DA SIMULAÇÃO")
         for episodio in range(self.NUMERO_EXECUCOES):
@@ -286,6 +319,7 @@ class MotorDeSimulacao:
             agente = self.agentes[0]
             agente.setPolitica(politica_global)
             if hasattr(politica_global, 'acabou'): politica_global.acabou = False
+            if hasattr(agente, 'colisoes'): agente.colisoes = 0
             politica_global.objetivo = 0
             passos_realizados = 0
             for passo in range(self.passos):
@@ -298,9 +332,11 @@ class MotorDeSimulacao:
             if hasattr(politica_global, "acabou") and politica_global.acabou:
                 sucessos += 1
             items_total = politica_global.items_recolhidos
+            colisoes = getattr(agente, 'colisoes', 0)
             historico_recompensas.append(agente.politica.objetivo)
             historico_passos.append(passos_realizados)
             historico_items.append(items_total)
+            historico_colisoes.append(colisoes)
             if episodio % LOG_FREQ == 0:
                 print(f"Episódio {episodio} | Epsilon: {politica_global.epsilon:.3f} | "
                       f"Passos: {passos_realizados} | Items (Apanhar+Depositar): {items_total}"f"recompensa: {agente.politica.objetivo}")
@@ -312,6 +348,7 @@ class MotorDeSimulacao:
         plt.plot(historico_passos, marker='o', linestyle='-', color='blue', alpha=0.6, label='Passos por Tentativa')
         plt.title("Desempenho da Política QLearning")
         plt.ylabel("Número de Passos Gastos")
+        plt.xlabel("Tentativa")
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.show()
@@ -321,7 +358,7 @@ class MotorDeSimulacao:
         plt.bar(['Taxa de Sucesso'], [taxa_sucesso], color='blue', edgecolor='black', width=0.4)
         plt.ylim(0, 105)  # Escala de 0 a 100%
         plt.ylabel('Percentagem (%)')
-        plt.title('Eficácia do Agente (Sucesso)')
+        plt.title("Desempenho da Política QLearning")
         plt.grid(axis='y', linestyle='--', alpha=0.5)
         plt.text(0, taxa_sucesso + 1, f"{taxa_sucesso:.1f}%",
                  ha='center', va='bottom', fontweight='bold', fontsize=12)
@@ -330,11 +367,21 @@ class MotorDeSimulacao:
         plt.figure(figsize=(10, 6))
         plt.plot(historico_recompensas, color='blue', marker='o')
         plt.title("Recompensa por tentativa")  # Corrigido de set_title para title
+        plt.title("Desempenho da Política QLearning")
         plt.ylabel("Recompensa")
+        plt.xlabel("Tentativa")
+        plt.grid(True, alpha=0.3)
+        plt.show()
+        # Grafico colisoes
+        plt.figure(figsize=(10, 6))
+        plt.plot(historico_colisoes, color='blue', marker='o')
+        plt.title("Colisões por tentativa")  # Corrigido de set_title para title
+        plt.title("Desempenho da Política QLearning")
+        plt.ylabel("Número de Colisões")
         plt.xlabel("Tentativa")
         plt.grid(True, alpha=0.3)
         plt.show()
 
 if __name__ == "__main__":
-    sim = MotorDeSimulacao([], None).cria("mundoFarol.json")
+    sim = MotorDeSimulacao([], None).cria("mundoRecolecao.json")
     sim.executa()

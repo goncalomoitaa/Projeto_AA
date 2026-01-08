@@ -34,10 +34,12 @@ class AmbienteRecolecao(Ambiente):
             x = agente.x + dx
             y = agente.y + dy
             if x < 0 or x >= self.sizeX or y < 0 or y >= self.sizeY or (x, y) in self.obstaculos:
+                agente.colisoes += 1
                 agente.avaliacaoEstadoAtual(-10)
                 return
             for outro in self.agentes:
                 if outro != agente and (x, y) == (outro.x, outro.y):
+                    agente.colisoes += 1
                     agente.avaliacaoEstadoAtual(-10)
                     return
             dist_antes = self.calcular_distancia_minima(agente)
