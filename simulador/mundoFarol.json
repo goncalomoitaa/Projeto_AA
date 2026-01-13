@@ -1,0 +1,10 @@
+{
+  "ambiente": "Ambiente Farol",
+  "politica": "PoliticaQLearning",
+  "sizeX": 5,
+  "sizeY": 5,
+  "passos": 20,
+  "agentes": [{ "nome_agente": "A", "pos_agente": [0,4]}],
+  "obstaculos": [[1, 3], [3, 3], [3, 2], [1, 2], [1, 4], [2, 0]],
+  "farol": [4, 4]
+}

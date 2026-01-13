@@ -1,0 +1,21 @@
+{
+  "ambiente": "Ambiente Recolecao",
+  "politica": "PoliticaQLearning",
+  "sizeX": 5,
+  "sizeY": 5,
+  "passos": 20,
+  "agentes": [
+    { "nome_agente": "A", "pos_agente": [0, 0] }
+  ],
+  "obstaculos": [
+    [1, 0]
+  ],
+  "ninhos": [
+    [4, 4],
+    [0, 2]
+  ],
+  "recursos": [
+    { "recurso": "R1", "valor": 1, "pos": [2, 0] },
+    { "recurso": "R2", "valor": 2, "pos": [2, 2] }
+  ]
+}

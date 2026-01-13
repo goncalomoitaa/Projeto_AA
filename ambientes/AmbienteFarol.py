@@ -1,0 +1,73 @@
+from agentes.Accao import Accao
+from ambientes.Ambiente import Ambiente
+from agentes.AccaoMover import AccaoMover
+from agentes.AgenteFarol import AgenteFarol
+
+class AmbienteFarol(Ambiente):
+
+    def __init__(self, sizeX, sizeY, farol):
+        super().__init__(sizeX, sizeY)
+        self.farol = farol
+        self.objetivos = [farol]
+
+    def agir(self, accao: Accao, agente: AgenteFarol):
+        if isinstance(accao, AccaoMover):
+            dx, dy = accao.direcao
+            if (dx, dy) == (0, 0):
+                agente.avaliacaoEstadoAtual(-1)
+                return
+            else:
+                x = agente.x + dx
+                y = agente.y + dy
+                if (x, y) == self.farol:
+                    agente.x = x
+                    agente.y = y
+                    agente.avaliacaoEstadoAtual(70)
+                    agente.politica.acabou = True
+                    return
+                if (x, y) in self.obstaculos:
+                    agente.colisoes += 1
+                    agente.avaliacaoEstadoAtual(-1)
+                    return
+                for outro_agente in self.agentes:
+                    if outro_agente != agente and (x, y) == (outro_agente.x, outro_agente.y):
+                        agente.colisoes += 1
+                        agente.avaliacaoEstadoAtual(-1)
+                        return
+                if x < 0 or x >= self.sizeX or y < 0 or y >= self.sizeY:
+                    agente.colisoes += 1
+                    agente.avaliacaoEstadoAtual(-1)
+                    return
+                else:
+                    fx, fy = self.farol
+                    dist_antiga = abs(agente.x - fx) + abs(agente.y - fy)
+                    dist_nova = abs(x - fx) + abs(y - fy)
+                    recompensa_progresso = (dist_antiga - dist_nova)
+                    agente.avaliacaoEstadoAtual(recompensa_progresso)
+                    agente.x = x
+                    agente.y = y
+                    agente.avaliacaoEstadoAtual(-0.5) #penalidade a cada passo
+                    return
+
+    def drawingWorld(self):
+        world = [[" . " for _ in range(self.sizeX)] for _ in range(self.sizeY)]
+        if self.farol is not None:
+            fx, fy = self.farol
+            world[fy][fx] = " T "
+        for agente in self.agentes:
+            world[agente.y][agente.x] = f" {agente.nome} "
+        for obstaculo in self.obstaculos:
+            world[obstaculo[1]][obstaculo[0]] = " # "
+        for w in world:
+            print("".join(w))
+        print()
+
+    def getItem(self, x, y):
+        if (x, y) in self.obstaculos:
+            return "OBSTACULO"
+        if (x, y) in self.agentes:
+            return "AGENTE"
+        if (x, y) == self.farol:
+            return "FAROL"
+        else:
+            return "VAZIO"
