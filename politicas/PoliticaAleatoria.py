@@ -22,7 +22,6 @@ class PoliticaAleatoria(Politica):
             for j in self.ninhos:
                 if tuple(j) in obs:
                     obj.append(tuple(j))
-        print(obj)
         if obj:
             alvo = min(
                 obj,
